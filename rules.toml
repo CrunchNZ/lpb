@@ -1,0 +1,87 @@
+[cursor]
+language = "typescript"
+style = "airbnb"
+standards = """
+- Use TypeScript interfaces for data models (from DTS 3.5)
+- Always include try-catch for SDK calls
+- Comment key functions with PRD references
+- Enforce guardrails in code (e.g., if (mcap <= 150000) throw Error)
+- Keep files under 300 lines, split when necessary
+- Generate unit tests for all new functions
+- Use descriptive variable names and function signatures
+- Include JSDoc comments for public APIs
+- Follow React best practices with hooks and functional components
+- Implement proper error boundaries and loading states
+- Use environment variables for configuration
+- Validate all user inputs and API responses
+- Log important events for debugging and monitoring
+- Use async/await instead of promises where possible
+- Implement proper TypeScript types for all data structures
+"""
+
+[typescript]
+strict = true
+noImplicitAny = true
+strictNullChecks = true
+strictFunctionTypes = true
+noImplicitReturns = true
+noFallthroughCasesInSwitch = true
+noUncheckedIndexedAccess = true
+exactOptionalPropertyTypes = true
+
+[react]
+jsx = "react-jsx"
+jsxImportSource = "react"
+strictMode = true
+
+[testing]
+framework = "jest"
+coverage = true
+watch = true
+verbose = true
+
+[eslint]
+extends = ["airbnb", "airbnb-typescript"]
+rules = {
+  "@typescript-eslint/no-unused-vars": "error",
+  "@typescript-eslint/explicit-function-return-type": "warn",
+  "@typescript-eslint/no-explicit-any": "error",
+  "react-hooks/rules-of-hooks": "error",
+  "react-hooks/exhaustive-deps": "warn",
+  "import/prefer-default-export": "off",
+  "import/no-default-export": "error"
+}
+
+[prettier]
+semi = true
+trailingComma = "es5"
+singleQuote = true
+printWidth = 80
+tabWidth = 2
+useTabs = false
+
+[autonomous_development]
+# Guidelines for AI agents working on this project
+context_files = ["docs/PRD.md", "docs/DTS.md", "docs/agent-prompts.md"]
+test_first = true
+modular_development = true
+documentation_density = true
+error_reduction = true
+
+[code_organization]
+max_file_length = 300
+modular_structure = true
+clear_separation = true
+naming_conventions = true
+
+[security]
+api_key_management = true
+input_validation = true
+error_handling = true
+audit_trail = true
+
+[performance]
+caching_strategy = true
+optimization = true
+monitoring = true
+profiling = true 
