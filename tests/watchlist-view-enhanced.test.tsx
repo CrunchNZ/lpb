@@ -713,16 +713,19 @@ describe('Enhanced WatchlistView Component', () => {
       // Test hover state - the component applies classes conditionally
       fireEvent.mouseEnter(tokenCard);
       
-      // Check that the card has some hover-related classes
-      expect(tokenCard.className).toContain('cursor-pointer');
-      expect(tokenCard.className).toContain('transition-all');
+      // The CSS classes are applied to the Card component inside the wrapper div
+      // Look for the Card element within the token card
+      const cardElement = tokenCard.querySelector('[class*="cursor-pointer"]');
+      expect(cardElement).toBeInTheDocument();
+      expect(cardElement?.className).toContain('cursor-pointer');
+      expect(cardElement?.className).toContain('transition-all');
 
       // Test mouse leave
       fireEvent.mouseLeave(tokenCard);
       
       // After mouse leave, the hover classes should be removed
       // The card should still have the base classes but not the hover-specific ones
-      expect(tokenCard.className).toContain('cursor-pointer');
+      expect(cardElement?.className).toContain('cursor-pointer');
     }
   });
 

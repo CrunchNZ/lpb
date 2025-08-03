@@ -1,0 +1,216 @@
+appId: com.solanaliquiditysentinel.app
+productName: Liquidity Sentinel
+copyright: Copyright © 2024 Solana Liquidity Sentinel Team
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - dist/**/*
+  - node_modules/**/*
+  - package.json
+  - "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
+  - "!node_modules/*.d.ts"
+  - "!node_modules/.bin"
+  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
+  - "!.editorconfig"
+  - "!**/._*"
+  - "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}"
+  - "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}"
+  - "!**/{appveyor.yml,.travis.yml,circle.yml}"
+  - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+
+extraResources:
+  - from: build
+    to: build
+    filter:
+      - "**/*"
+
+mac:
+  category: public.app-category.finance
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  icon: build/icon.icns
+  darkModeSupport: true
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  provisioningProfile: build/embedded.provisionprofile
+  extendInfo:
+    NSAppleEventsUsageDescription: "This app requires access to send Apple Events to automate trading operations."
+    NSCameraUsageDescription: "This app requires camera access for QR code scanning."
+    NSMicrophoneUsageDescription: "This app requires microphone access for voice commands."
+    NSPhotoLibraryUsageDescription: "This app requires photo library access for importing wallet files."
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: build/icon.ico
+  requestedExecutionLevel: asInvoker
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  publisherName: Solana Liquidity Sentinel Team
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+    - target: rpm
+      arch:
+        - x64
+  icon: build/icon.png
+  category: Finance
+  desktop:
+    Name: Liquidity Sentinel
+    Comment: Autonomous liquidity farming bot for Solana meme coins
+    GenericName: DeFi Trading Bot
+    Categories: Finance;Network;Qt;KDE;
+    MimeType: x-scheme-handler/liquidity-sentinel;
+    StartupNotify: true
+    StartupWMClass: Liquidity Sentinel
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Liquidity Sentinel
+  include: build/installer.nsh
+
+dmg:
+  title: Liquidity Sentinel
+  icon: build/icon.icns
+  background: build/background.png
+  window:
+    width: 540
+    height: 380
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+appImage:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  category: Finance
+
+deb:
+  packageCategory: finance
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libdrm2
+    - libxkbcommon0
+    - libxcomposite1
+    - libxdamage1
+    - libxrandr2
+    - libgbm1
+    - libasound2
+
+rpm:
+  packageCategory: finance
+  depends:
+    - libgtk-3
+    - libnotify
+    - nss
+    - libXScrnSaver
+    - libXtst
+    - xdg-utils
+    - at-spi2-atk
+    - libdrm
+    - libxkbcommon
+    - libXcomposite
+    - libXdamage
+    - libXrandr
+    - mesa-libgbm
+    - alsa-lib
+
+publish:
+  provider: github
+  releaseType: release
+  publishAutoUpdate: true
+  updateProvider: github
+  updaterCacheDirName: liquidity-sentinel-updater
+
+afterSign: scripts/notarize.js
+
+beforeBuild: scripts/before-build.js
+afterAllArtifactBuild: scripts/after-all-artifact-build.js
+
+compression: maximum
+
+npmRebuild: false
+
+buildDependenciesFromSource: true
+
+nodeGypRebuild: false
+
+electronVersion: 27.0.0
+
+electronDownload:
+  cache: ~/.cache/electron
+  mirror: https://npm.taobao.org/mirrors/electron/
+
+artifactBuildTimeout: 1800000
+
+forceCodeSigning: false
+
+signDmg: false
+
+signAndEditInstaller: false
+
+generateUpdatesFilesForAllChannels: false
+
+compression: maximum
+
+removePackageScripts: true
+removePackageKeywords: true
+
+extraMetadata:
+  main: dist/main.js
+  author:
+    name: Solana Liquidity Sentinel Team
+    email: support@liquiditysentinel.com
+  repository:
+    type: git
+    url: https://github.com/CrunchNZ/lpb.git
+  keywords:
+    - solana
+    - defi
+    - liquidity
+    - bot
+    - electron
+    - trading
+    - cryptocurrency
+  engines:
+    node: ">=18.0.0"
+    npm: ">=8.0.0" 
