@@ -53,13 +53,11 @@ describe('Apple Design System Components', () => {
     });
 
     it('should throw error when used outside provider', () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      
+      // React 18+ catches errors and logs them instead of throwing
+      // So we check that the error is thrown during render
       expect(() => {
         render(<TestAnimationComponent />);
       }).toThrow('useAnimation must be used within an AnimationProvider');
-      
-      consoleSpy.mockRestore();
     });
 
     it('should handle fadeIn animation', async () => {

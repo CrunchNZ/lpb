@@ -1076,9 +1076,9 @@ describe('UI Components', () => {
       const input = screen.getByPlaceholderText('Enter text');
       await user.type(input, 'test');
       
-      // Use click instead of keyboard Enter to avoid JSDOM requestSubmit issue
-      const submitButton = screen.getByRole('button', { name: 'Submit' });
-      await user.click(submitButton);
+      // Use fireEvent.submit on the form instead of clicking submit button to avoid JSDOM requestSubmit issue
+      const form = screen.getByRole('button', { name: 'Submit' }).closest('form');
+      fireEvent.submit(form!);
       
       expect(handleSubmit).toHaveBeenCalled();
     });
