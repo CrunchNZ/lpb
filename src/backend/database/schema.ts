@@ -1,5 +1,5 @@
 import { Database } from 'sqlite3';
-import { promisify } from 'util';
+// import { promisify } from 'util';
 
 export interface Position {
   id: string;

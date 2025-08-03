@@ -384,7 +384,7 @@ class DexscreenerAPI {
       return null;
     }
 
-    const now = Date.now();
+    // const now = Date.now();
     const pairAge = pair.pairAge ? parseFloat(pair.pairAge) : 0;
     const ageHours = pairAge / (1000 * 60 * 60); // Convert to hours
 

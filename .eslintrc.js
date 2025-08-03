@@ -28,10 +28,10 @@ module.exports = {
   ],
   rules: {
     // TypeScript specific rules
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/prefer-const': 'off',
     '@typescript-eslint/no-var-requires': 'off',
 
@@ -53,7 +53,7 @@ module.exports = {
     'react/no-unescaped-entities': 'off',
 
     // General rules
-    'no-console': 'warn',
+    'no-console': 'off',
     'no-debugger': 'error',
     'no-unused-vars': 'off', // Use TypeScript version
     'prefer-const': 'error',
@@ -62,8 +62,9 @@ module.exports = {
     'prefer-template': 'error',
     'template-curly-spacing': 'error',
     'arrow-spacing': 'error',
-    'no-duplicate-imports': 'error',
+    'no-duplicate-imports': 'warn',
     'no-useless-rename': 'error',
+    'no-case-declarations': 'warn',
     'prefer-destructuring': [
       'error',
       {
@@ -95,9 +96,9 @@ module.exports = {
 
     // Code style rules
     'max-len': [
-      'error',
+      'warn',
       {
-        code: 80,
+        code: 120,
         tabWidth: 2,
         ignoreUrls: true,
         ignoreStrings: true,

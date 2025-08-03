@@ -7,7 +7,7 @@
  * @reference DTS.md#3.1 - Strategy Factory
  */
 
-import { StrategyFactory as IStrategyFactory, StrategyType, StrategyConfig } from './types';
+import { StrategyFactory as IStrategyFactory, StrategyType, StrategyConfig, Strategy } from './types';
 import { AggressiveStrategy } from './AggressiveStrategy';
 import { BalancedStrategy } from './BalancedStrategy';
 import { ConservativeStrategy } from './ConservativeStrategy';

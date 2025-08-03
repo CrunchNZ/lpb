@@ -35,8 +35,8 @@ export class BotOrchestrator {
   private dexscreenerAPI: DexscreenerAPI;
   private config: BotConfig;
   private status: BotStatus;
-  private pollingInterval?: NodeJS.Timeout;
-  private watchlistInterval?: NodeJS.Timeout;
+  private pollingInterval?: ReturnType<typeof setInterval>;
+  private watchlistInterval?: ReturnType<typeof setInterval>;
   private isRunning: boolean = false;
 
   constructor(

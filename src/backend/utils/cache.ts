@@ -18,7 +18,7 @@ export interface CacheConfig {
 export class CacheManager<T = any> {
   private cache: Map<string, CacheEntry<T>>;
   private config: CacheConfig;
-  private cleanupTimer?: NodeJS.Timeout;
+  private cleanupTimer?: ReturnType<typeof setInterval>;
 
   constructor(config: Partial<CacheConfig> = {}) {
     this.config = {

@@ -4,7 +4,7 @@
  */
 
 import { Database } from 'sqlite3';
-import { promisify } from 'util';
+// import { promisify } from 'util';
 import { Watchlist, WatchlistToken } from './schema';
 
 export class WatchlistDAO {
