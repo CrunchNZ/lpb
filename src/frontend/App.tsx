@@ -5,6 +5,7 @@ import { PageRouter } from './components/PageRouter';
 import { BottomTabNavigation } from './components/BottomTabNavigation';
 import { ThemeProvider } from './components/ThemeProvider';
 import { ModalManager } from './components/ModalManager';
+import { AnimationProvider } from './components/AnimationProvider';
 
 export const App: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -17,19 +18,21 @@ export const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Main content */}
-        <PageRouter />
-        
-        {/* Bottom tab navigation */}
-        <BottomTabNavigation
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-        
-        {/* Modal manager for detailed views */}
-        <ModalManager />
-      </div>
+      <AnimationProvider>
+        <div className="apple-app min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 apple-transition">
+          {/* Main content */}
+          <PageRouter />
+          
+          {/* Bottom tab navigation */}
+          <BottomTabNavigation
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+          
+          {/* Modal manager for detailed views */}
+          <ModalManager />
+        </div>
+      </AnimationProvider>
     </ThemeProvider>
   );
 }; 
