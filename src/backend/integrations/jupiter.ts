@@ -9,8 +9,7 @@
  * - Real-time price monitoring
  */
 
-import { Connection, PublicKey, Transaction, Keypair } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Connection, Keypair } from '@solana/web3.js';
 
 // Types for Jupiter integration
 export interface JupiterToken {
@@ -392,7 +391,7 @@ export class JupiterIntegration {
   /**
    * Simulate a swap transaction (for development)
    */
-  private async simulateSwapTransaction(wallet: Keypair): Promise<JupiterSwapResult> {
+  private async simulateSwapTransaction(_wallet: Keypair): Promise<JupiterSwapResult> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 

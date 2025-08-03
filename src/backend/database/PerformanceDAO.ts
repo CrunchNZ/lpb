@@ -96,7 +96,11 @@ export class PerformanceDAO {
     });
   }
 
-  async getMetricsByTimeRangeGrouped(startTime: number, endTime: number, interval: number): Promise<PerformanceMetrics[]> {
+  async getMetricsByTimeRangeGrouped(
+    startTime: number,
+    endTime: number,
+    interval: number
+  ): Promise<PerformanceMetrics[]> {
     return new Promise((resolve, reject) => {
       this.db.all(`
         SELECT 

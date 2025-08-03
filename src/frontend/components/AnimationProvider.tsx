@@ -23,26 +23,21 @@ export const AnimationProvider: React.FC<AnimationProviderProps> = ({ children }
   const animate = useCallback((element: HTMLElement, animation: string, duration = 300): Promise<void> => {
     return new Promise((resolve) => {
       element.style.animation = `${animation} ${duration}ms ease-in-out`;
-      
       const handleAnimationEnd = () => {
         element.removeEventListener('animationend', handleAnimationEnd);
         element.style.animation = '';
         resolve();
       };
-      
       element.addEventListener('animationend', handleAnimationEnd);
     });
   }, []);
 
   const fadeIn = useCallback((element: HTMLElement): Promise<void> => {
-    element.style.opacity = '0';
-    element.style.display = 'block';
-    
+    element.style.opacity = '0';element.style.display = 'block';
     return new Promise((resolve) => {
       requestAnimationFrame(() => {
         element.style.transition = 'opacity 300ms ease-in-out';
         element.style.opacity = '1';
-        
         setTimeout(() => {
           element.style.transition = '';
           resolve();
@@ -54,7 +49,6 @@ export const AnimationProvider: React.FC<AnimationProviderProps> = ({ children }
   const fadeOut = useCallback((element: HTMLElement): Promise<void> => {
     element.style.transition = 'opacity 300ms ease-in-out';
     element.style.opacity = '0';
-    
     return new Promise((resolve) => {
       setTimeout(() => {
         element.style.display = 'none';
@@ -66,15 +60,12 @@ export const AnimationProvider: React.FC<AnimationProviderProps> = ({ children }
 
   const slideUp = useCallback((element: HTMLElement): Promise<void> => {
     element.style.transform = 'translateY(20px)';
-    element.style.opacity = '0';
-    element.style.display = 'block';
-    
+    element.style.opacity = '0';element.style.display = 'block';
     return new Promise((resolve) => {
       requestAnimationFrame(() => {
         element.style.transition = 'all 300ms ease-in-out';
         element.style.transform = 'translateY(0)';
         element.style.opacity = '1';
-        
         setTimeout(() => {
           element.style.transition = '';
           resolve();
@@ -87,7 +78,6 @@ export const AnimationProvider: React.FC<AnimationProviderProps> = ({ children }
     element.style.transition = 'all 300ms ease-in-out';
     element.style.transform = 'translateY(20px)';
     element.style.opacity = '0';
-    
     return new Promise((resolve) => {
       setTimeout(() => {
         element.style.display = 'none';
@@ -99,15 +89,12 @@ export const AnimationProvider: React.FC<AnimationProviderProps> = ({ children }
 
   const scaleIn = useCallback((element: HTMLElement): Promise<void> => {
     element.style.transform = 'scale(0.9)';
-    element.style.opacity = '0';
-    element.style.display = 'block';
-    
+    element.style.opacity = '0';element.style.display = 'block';
     return new Promise((resolve) => {
       requestAnimationFrame(() => {
         element.style.transition = 'all 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55)';
         element.style.transform = 'scale(1)';
         element.style.opacity = '1';
-        
         setTimeout(() => {
           element.style.transition = '';
           resolve();
@@ -120,7 +107,6 @@ export const AnimationProvider: React.FC<AnimationProviderProps> = ({ children }
     element.style.transition = 'all 300ms ease-in-out';
     element.style.transform = 'scale(0.9)';
     element.style.opacity = '0';
-    
     return new Promise((resolve) => {
       setTimeout(() => {
         element.style.display = 'none';

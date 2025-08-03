@@ -9,8 +9,7 @@
 
 import { StrategyManager } from '../strategies/StrategyManager';
 import { DatabaseManager } from '../database/DatabaseManager';
-import { DexscreenerAPI } from '../integrations/dexscreener';
-import { TokenData } from '../integrations/dexscreener';
+import { DexscreenerAPI, TokenData } from '../integrations/dexscreener';
 
 export interface BotConfig {
   pollingInterval: number; // milliseconds

@@ -9,7 +9,7 @@
  * - Real-time pool data monitoring
  */
 
-import { Connection, PublicKey, Transaction, Keypair } from '@solana/web3.js';
+import { Connection, Transaction, Keypair } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 // Types for Meteora integration

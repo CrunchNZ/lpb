@@ -1,10 +1,8 @@
-import { DatabaseSchema } from './schema';
+import { DatabaseSchema, Position, PerformanceMetrics, Watchlist, WatchlistToken } from './schema';
 import { PositionDAO } from './PositionDAO';
-import { PerformanceDAO } from './PerformanceDAO';
+import { PerformanceDAO, StrategyBreakdown } from './PerformanceDAO';
 import { ConfigDAO } from './ConfigDAO';
 import { WatchlistDAO } from './WatchlistDAO';
-import { Position, PerformanceMetrics, Watchlist, WatchlistToken } from './schema';
-import { StrategyBreakdown } from './PerformanceDAO';
 import { DatabaseCache } from '../utils/cache';
 import { dbPerformanceMonitor } from '../utils/performance';
 
@@ -132,7 +130,11 @@ export class DatabaseManager {
     );
   }
 
-  async getPerformanceMetricsGrouped(startTime: number, endTime: number, interval: number): Promise<PerformanceMetrics[]> {
+  async getPerformanceMetricsGrouped(
+    startTime: number,
+    endTime: number,
+    interval: number
+  ): Promise<PerformanceMetrics[]> {
     return this.cache.cacheQuery(
       'getPerformanceMetricsGrouped',
       [startTime, endTime, interval],

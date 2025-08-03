@@ -15,6 +15,8 @@ module.exports = {
     '!src/main.ts',
     '!src/frontend/index.tsx',
   ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
   coverageThreshold: {
     global: {
       branches: 80,

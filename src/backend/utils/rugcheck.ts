@@ -11,7 +11,6 @@
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
-import { getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
 
 // Types for rug check analysis
 export interface RugCheckConfig {
@@ -129,7 +128,7 @@ export class RugCheckAnalyzer {
       console.log(`RugCheck: Starting analysis for token ${tokenAddress}`);
 
       // Get token information
-      const tokenInfo = await this.getTokenInfo(tokenAddress);
+      await this.getTokenInfo(tokenAddress);
 
       // Analyze liquidity
       const liquidityAnalysis = await this.analyzeLiquidity(tokenAddress);
@@ -193,7 +192,7 @@ export class RugCheckAnalyzer {
    */
   private async getTokenInfo(tokenAddress: string): Promise<TokenInfo> {
     try {
-      const mint = new PublicKey(tokenAddress);
+      new PublicKey(tokenAddress);
 
       // In a real implementation, this would fetch from token APIs
       // For now, we'll create mock data
@@ -217,7 +216,7 @@ export class RugCheckAnalyzer {
   /**
    * Analyze liquidity patterns
    */
-  private async analyzeLiquidity(tokenAddress: string): Promise<LiquidityAnalysis> {
+  private async analyzeLiquidity(_tokenAddress: string): Promise<LiquidityAnalysis> {
     try {
       // In a real implementation, this would analyze DEX liquidity
       const mockLiquidity: LiquidityInfo = {
@@ -270,7 +269,7 @@ export class RugCheckAnalyzer {
   /**
    * Analyze holder distribution
    */
-  private async analyzeHolders(tokenAddress: string): Promise<HolderAnalysis> {
+  private async analyzeHolders(_tokenAddress: string): Promise<HolderAnalysis> {
     try {
       // In a real implementation, this would fetch holder data
       const mockHolders: HolderInfo[] = [
@@ -331,7 +330,7 @@ export class RugCheckAnalyzer {
   /**
    * Analyze trading patterns
    */
-  private async analyzeTrading(tokenAddress: string): Promise<TradingAnalysis> {
+  private async analyzeTrading(_tokenAddress: string): Promise<TradingAnalysis> {
     try {
       // In a real implementation, this would analyze trading data
       const mockData = {
@@ -376,7 +375,7 @@ export class RugCheckAnalyzer {
   /**
    * Analyze contract code
    */
-  private async analyzeContract(tokenAddress: string): Promise<ContractAnalysis> {
+  private async analyzeContract(_tokenAddress: string): Promise<ContractAnalysis> {
     try {
       // In a real implementation, this would analyze contract code
       const mockContract = {
@@ -425,7 +424,7 @@ export class RugCheckAnalyzer {
   /**
    * Analyze social sentiment
    */
-  private async analyzeSocial(tokenAddress: string): Promise<SocialAnalysis> {
+  private async analyzeSocial(_tokenAddress: string): Promise<SocialAnalysis> {
     try {
       // In a real implementation, this would analyze social media sentiment
       const mockSocial = {
