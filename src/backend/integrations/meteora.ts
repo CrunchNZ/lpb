@@ -9,8 +9,7 @@
  * - Real-time pool data monitoring
  */
 
-import { Connection, Transaction, Keypair } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Connection, Keypair } from '@solana/web3.js';
 
 // Types for Meteora integration
 export interface MeteoraPool {
@@ -304,9 +303,6 @@ export class MeteoraIntegration {
     pool: MeteoraPool
   ): number {
     // Simple liquidity calculation based on pool ratios
-    const poolRatio = pool.tokenABalance / pool.tokenBBalance;
-    const inputRatio = tokenAAmount / tokenBAmount;
-
     // Use the smaller ratio to determine liquidity
     const liquidity = Math.min(tokenAAmount / pool.tokenABalance, tokenBAmount / pool.tokenBBalance);
 
@@ -316,7 +312,7 @@ export class MeteoraIntegration {
   /**
    * Simulate a transaction (for development)
    */
-  private async simulateTransaction(wallet: Keypair): Promise<MeteoraTransaction> {
+  private async simulateTransaction(_wallet: Keypair): Promise<MeteoraTransaction> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 

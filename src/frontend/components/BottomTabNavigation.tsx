@@ -113,4 +113,4 @@ export const BottomTabNavigation: React.FC<BottomTabNavigationProps> = ({
       <div className="h-safe-area-inset-bottom bg-black/20 backdrop-blur-xl" />
     </div>
   );
-}; 
+};

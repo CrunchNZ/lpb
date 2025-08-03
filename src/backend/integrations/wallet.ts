@@ -305,7 +305,7 @@ export class WalletManager {
       );
 
       const transaction = new Transaction().add(instruction);
-      const signature = await sendAndConfirmTransaction(
+      await sendAndConfirmTransaction(
         this.connection,
         transaction,
         [this.keypair]
@@ -423,7 +423,7 @@ export class WalletManager {
 
       const salt = crypto.randomBytes(32);
       const iterations = 100000;
-      const key = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256');
+      crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256');
 
       const privateKey = this.exportKeypair();
       if (!privateKey) {
@@ -447,7 +447,7 @@ export class WalletManager {
   /**
    * Decrypt wallet with password
    */
-  decryptWallet(password: string): boolean {
+  decryptWallet(_password: string): boolean {
     try {
       if (!this.security.encrypted) {
         return true; // Already decrypted

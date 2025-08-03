@@ -320,4 +320,4 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(style);
 }
 
-export default AnimationProvider; 
+export default AnimationProvider;
