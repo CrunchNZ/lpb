@@ -291,4 +291,4 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(style);
 }
 
-export default ContextMenu; 
+export default ContextMenu;

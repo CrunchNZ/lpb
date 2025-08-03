@@ -59,7 +59,7 @@ export const BottomTabNavigation: React.FC<BottomTabNavigationProps> = ({
             {tabItems.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-              
+
               return (
                 <button
                   key={tab.id}
@@ -74,10 +74,10 @@ export const BottomTabNavigation: React.FC<BottomTabNavigationProps> = ({
                   {isActive && (
                     <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
                   )}
-                  
+
                   {/* Icon with badge */}
                   <div className="relative">
-                    <Icon 
+                    <Icon
                       className={`w-6 h-6 transition-all duration-300 ${
                         isActive ? 'scale-110' : 'scale-100'
                       }`}
@@ -90,14 +90,14 @@ export const BottomTabNavigation: React.FC<BottomTabNavigationProps> = ({
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Label */}
                   <span className={`text-xs font-medium mt-1 transition-all duration-300 ${
                     isActive ? 'opacity-100' : 'opacity-70'
                   }`}>
                     {tab.label}
                   </span>
-                  
+
                   {/* Active background */}
                   {isActive && (
                     <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent rounded-t-lg" />
@@ -108,7 +108,7 @@ export const BottomTabNavigation: React.FC<BottomTabNavigationProps> = ({
           </div>
         </div>
       </div>
-      
+
       {/* Safe area for mobile devices */}
       <div className="h-safe-area-inset-bottom bg-black/20 backdrop-blur-xl" />
     </div>

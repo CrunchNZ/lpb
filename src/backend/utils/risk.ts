@@ -9,7 +9,7 @@
  * - Automated risk controls
  */
 
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection } from '@solana/web3.js';
 
 // Types for risk management
 export interface RiskConfig {
@@ -417,7 +417,7 @@ export class RiskManagementSystem {
   /**
    * Calculate portfolio volatility
    */
-  private calculateVolatility(portfolio: Portfolio): number {
+  private calculateVolatility(_portfolio: Portfolio): number {
     try {
       if (this.portfolioHistory.length < 2) return 0;
 

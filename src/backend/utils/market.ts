@@ -9,7 +9,7 @@
  * - Market sentiment correlation
  */
 
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection } from '@solana/web3.js';
 
 // Types for market data
 export interface MarketDataConfig {
@@ -334,22 +334,26 @@ export class MarketDataManager {
         let shouldTrigger = false;
 
         switch (alert.type) {
-          case 'PRICE':
+          case 'PRICE': {
             const priceData = await this.getPriceData(alert.symbol);
             currentValue = priceData.price;
             break;
-          case 'VOLUME':
+          }
+          case 'VOLUME': {
             const volumeData = await this.getVolumeData(alert.symbol);
             currentValue = volumeData.volume24h;
             break;
-          case 'LIQUIDITY':
+          }
+          case 'LIQUIDITY': {
             const liquidityData = await this.getLiquidityData(alert.symbol);
             currentValue = liquidityData.totalLiquidity;
             break;
-          case 'SENTIMENT':
+          }
+          case 'SENTIMENT': {
             const sentimentData = await this.getMarketSentiment(alert.symbol);
             currentValue = sentimentData.sentimentScore;
             break;
+          }
           default:
             continue;
         }

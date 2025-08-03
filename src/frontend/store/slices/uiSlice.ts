@@ -180,28 +180,54 @@ const uiSlice = createSlice({
       state.navigation.tabBadges = {};
     },
     // Detailed view modal actions
-    openPositionDetail: (state, action: PayloadAction<{ position: any; onClose?: (() => void) | undefined; onUpdate?: ((id: string, updates: any) => void) | undefined }>) => {
+    openPositionDetail: (state, action: PayloadAction<{
+      position: any;
+      onClose?: (() => void) | undefined;
+      onUpdate?: ((id: string, updates: any) => void) | undefined;
+    }>) => {
       state.navigation.modalStack.push({
         id: `position-${action.payload.position.id}`,
         component: 'PositionDetailView',
         data: action.payload,
       });
     },
-    openTokenDetail: (state, action: PayloadAction<{ token: any; onClose?: () => void; onAddToWatchlist?: ((token: any) => void) | undefined; onRemoveFromWatchlist?: ((symbol: string) => void) | undefined; isInWatchlist?: boolean }>) => {
+    openTokenDetail: (state, action: PayloadAction<{
+      token: any;
+      onClose?: () => void;
+      onAddToWatchlist?: ((token: any) => void) | undefined;
+      onRemoveFromWatchlist?: ((symbol: string) => void) | undefined;
+      isInWatchlist?: boolean;
+    }>) => {
       state.navigation.modalStack.push({
         id: `token-${action.payload.token.symbol}`,
         component: 'TokenDetailView',
         data: action.payload,
       });
     },
-    openWatchlistDetail: (state, action: PayloadAction<{ watchlist: any; tokens: any[]; tokenData: any; onClose?: () => void; onRemoveTokens?: ((symbols: string[]) => void) | undefined; onAddToken?: ((token: any) => void) | undefined; onRefreshData?: (() => void) | undefined; onTokenSelect?: ((token: any) => void) | undefined }>) => {
+    openWatchlistDetail: (state, action: PayloadAction<{
+      watchlist: any;
+      tokens: any[];
+      tokenData: any;
+      onClose?: () => void;
+      onRemoveTokens?: ((symbols: string[]) => void) | undefined;
+      onAddToken?: ((token: any) => void) | undefined;
+      onRefreshData?: (() => void) | undefined;
+      onTokenSelect?: ((token: any) => void) | undefined;
+    }>) => {
       state.navigation.modalStack.push({
         id: `watchlist-${action.payload.watchlist.id}`,
         component: 'WatchlistDetailView',
         data: action.payload,
       });
     },
-    openPoolDetail: (state, action: PayloadAction<{ pool: any; onClose?: () => void; onAddLiquidity?: (amountA: number, amountB: number) => Promise<void>; onRemoveLiquidity?: (percentage: number) => Promise<void>; onHarvestRewards?: () => Promise<void>; onRefreshData?: () => Promise<void> }>) => {
+    openPoolDetail: (state, action: PayloadAction<{
+      pool: any;
+      onClose?: () => void;
+      onAddLiquidity?: (amountA: number, amountB: number) => Promise<void>;
+      onRemoveLiquidity?: (percentage: number) => Promise<void>;
+      onHarvestRewards?: () => Promise<void>;
+      onRefreshData?: () => Promise<void>;
+    }>) => {
       state.navigation.modalStack.push({
         id: `pool-${action.payload.pool.id}`,
         component: 'PoolDetailView',

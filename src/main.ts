@@ -239,7 +239,7 @@ app.on('will-quit', () => {
 
 // Security: Prevent new window creation
 app.on('web-contents-created', (event, contents) => {
-  contents.on('new-window', (event, navigationUrl) => {
+  contents.on('new-window', (event, _navigationUrl) => {
     event.preventDefault();
   });
 });

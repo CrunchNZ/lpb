@@ -188,7 +188,7 @@ export class DatabaseCache {
   /**
    * Invalidate cache for specific method patterns
    */
-  invalidatePattern(pattern: string): void {
+  invalidatePattern(_pattern: string): void {
     // This is a simplified implementation
     // In a real implementation, you'd want more sophisticated pattern matching
     this.cache.clear();
@@ -318,7 +318,7 @@ export class APICache {
   /**
    * Clear cache for specific endpoint
    */
-  invalidateEndpoint(endpoint: string): void {
+  invalidateEndpoint(_endpoint: string): void {
     // Clear all keys that start with the endpoint
     this.cache.clear(); // Simplified - in real implementation, filter by pattern
   }

@@ -117,7 +117,8 @@ export class BalancedStrategy implements Strategy {
       const stabilityMultiplier = this.calculateStabilityMultiplier(token);
 
       // Calculate final position size
-      const positionSize = baseSize * sentimentMultiplier * marketCapMultiplier * volumeMultiplier * stabilityMultiplier;
+      const positionSize = baseSize * sentimentMultiplier * marketCapMultiplier *
+        volumeMultiplier * stabilityMultiplier;
 
       // Ensure position size doesn't exceed maximum
       const maxPositionSize = portfolioValue * this.config.maxPositionSize;

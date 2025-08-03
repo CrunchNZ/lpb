@@ -508,7 +508,7 @@ export class RugCheckAnalyzer {
   /**
    * Generate recommendations based on risk level
    */
-  private generateRecommendations(riskLevel: string, warnings: string[]): string[] {
+  private generateRecommendations(riskLevel: string, _warnings: string[]): string[] {
     const recommendations: string[] = [];
 
     switch (riskLevel) {
@@ -538,7 +538,7 @@ export class RugCheckAnalyzer {
   /**
    * Get analysis history for a token
    */
-  async getAnalysisHistory(tokenAddress: string): Promise<RugCheckResult[]> {
+  async getAnalysisHistory(_tokenAddress: string): Promise<RugCheckResult[]> {
     // In a real implementation, this would fetch from database
     return [];
   }

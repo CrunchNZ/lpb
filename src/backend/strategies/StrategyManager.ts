@@ -185,7 +185,7 @@ export class StrategyManager implements IStrategyManager {
    * @param marketData - Market data
    * @returns Confidence score (0-1)
    */
-  private calculateConfidence(strategy: Strategy, token: Token, marketData: MarketData): number {
+  private calculateConfidence(strategy: Strategy, token: Token, _marketData: MarketData): number {
     try {
       let confidence = 0.5; // Base confidence
 
@@ -246,7 +246,7 @@ export class StrategyManager implements IStrategyManager {
    * @param marketData - Market data
    * @returns Reasoning string
    */
-  private generateReasoning(strategy: Strategy, token: Token, marketData: MarketData): string {
+  private generateReasoning(strategy: Strategy, token: Token, _marketData: MarketData): string {
     try {
       const reasons: string[] = [];
 

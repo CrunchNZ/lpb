@@ -10,7 +10,7 @@ import { AnimationProvider } from './components/AnimationProvider';
 export const App: React.FC = () => {
   const dispatch = useAppDispatch();
   const { navigation } = useAppSelector((state) => state.ui);
-  const { activeTab, tabBadges } = navigation;
+  const { activeTab } = navigation;
 
   const handleTabChange = (tabId: string) => {
     dispatch(setActiveTab(tabId as any));
