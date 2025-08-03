@@ -52,12 +52,12 @@ export class DatabaseManager {
       () => this.positionDAO.updatePosition(id, updates),
       false
     );
-    
+
     // Invalidate related caches
     this.cache.invalidatePattern('getPosition');
     this.cache.invalidatePattern('getActivePositions');
     this.cache.invalidatePattern('getPositionsByStrategy');
-    
+
     return result;
   }
 
@@ -95,12 +95,12 @@ export class DatabaseManager {
       () => this.positionDAO.deletePosition(id),
       false
     );
-    
+
     // Invalidate related caches
     this.cache.invalidatePattern('getPosition');
     this.cache.invalidatePattern('getActivePositions');
     this.cache.invalidatePattern('getPositionsByStrategy');
-    
+
     return result;
   }
 
@@ -158,11 +158,11 @@ export class DatabaseManager {
       () => this.configDAO.setConfig(key, value),
       false
     );
-    
+
     // Invalidate config cache
     this.cache.invalidatePattern('getConfig');
     this.cache.invalidatePattern('getAllConfigs');
-    
+
     return result;
   }
 
@@ -198,11 +198,11 @@ export class DatabaseManager {
       () => this.configDAO.deleteConfig(key),
       false
     );
-    
+
     // Invalidate config cache
     this.cache.invalidatePattern('getConfig');
     this.cache.invalidatePattern('getAllConfigs');
-    
+
     return result;
   }
 
@@ -214,11 +214,11 @@ export class DatabaseManager {
       () => this.watchlistDAO.createWatchlist(name),
       false
     );
-    
+
     // Invalidate watchlist caches
     this.cache.invalidatePattern('getAllWatchlists');
     this.cache.invalidatePattern('getAllWatchlistsWithTokenCounts');
-    
+
     return result;
   }
 
@@ -247,12 +247,12 @@ export class DatabaseManager {
       () => this.watchlistDAO.updateWatchlist(id, name),
       false
     );
-    
+
     // Invalidate watchlist caches
     this.cache.invalidatePattern('getAllWatchlists');
     this.cache.invalidatePattern('getWatchlistById');
     this.cache.invalidatePattern('getAllWatchlistsWithTokenCounts');
-    
+
     return result;
   }
 
@@ -263,13 +263,13 @@ export class DatabaseManager {
       () => this.watchlistDAO.deleteWatchlist(id),
       false
     );
-    
+
     // Invalidate watchlist caches
     this.cache.invalidatePattern('getAllWatchlists');
     this.cache.invalidatePattern('getWatchlistById');
     this.cache.invalidatePattern('getAllWatchlistsWithTokenCounts');
     this.cache.invalidatePattern('getWatchlistTokens');
-    
+
     return result;
   }
 
@@ -286,13 +286,13 @@ export class DatabaseManager {
       () => this.watchlistDAO.addTokenToWatchlist(watchlistId, tokenSymbol, tokenName, pairAddress, chainId),
       false
     );
-    
+
     // Invalidate related caches
     this.cache.invalidatePattern('getWatchlistTokens');
     this.cache.invalidatePattern('getAllWatchlistedTokens');
     this.cache.invalidatePattern('isTokenWatchlisted');
     this.cache.invalidatePattern('getAllWatchlistsWithTokenCounts');
-    
+
     return result;
   }
 
@@ -303,13 +303,13 @@ export class DatabaseManager {
       () => this.watchlistDAO.removeTokenFromWatchlist(watchlistId, tokenSymbol),
       false
     );
-    
+
     // Invalidate related caches
     this.cache.invalidatePattern('getWatchlistTokens');
     this.cache.invalidatePattern('getAllWatchlistedTokens');
     this.cache.invalidatePattern('isTokenWatchlisted');
     this.cache.invalidatePattern('getAllWatchlistsWithTokenCounts');
-    
+
     return result;
   }
 
@@ -407,7 +407,7 @@ export class DatabaseManager {
       this.performanceDAO.getTotalPnl(),
       this.positionDAO.getAverageApy(),
       this.positionDAO.getActivePositions().then(positions => positions.length),
-      this.performanceDAO.getStrategyBreakdown()
+      this.performanceDAO.getStrategyBreakdown(),
     ]);
 
     return {
@@ -415,7 +415,7 @@ export class DatabaseManager {
       totalPnl,
       averageApy,
       activePositions,
-      strategyBreakdown
+      strategyBreakdown,
     };
   }
 
@@ -426,7 +426,7 @@ export class DatabaseManager {
   }> {
     const [metricsDeleted, configsDeleted] = await Promise.all([
       this.performanceDAO.cleanupOldMetrics(olderThanDays),
-      this.configDAO.cleanupOldConfigs(olderThanDays)
+      this.configDAO.cleanupOldConfigs(olderThanDays),
     ]);
 
     return { metricsDeleted, configsDeleted };
@@ -448,7 +448,7 @@ export class DatabaseManager {
       'notifications.enabled': 'true',
       'notifications.email': '',
       'logging.level': 'info',
-      'performance.tracking': 'true'
+      'performance.tracking': 'true',
     };
 
     await this.configDAO.setConfigs(defaultConfigs);
@@ -466,7 +466,7 @@ export class DatabaseManager {
         this.positionDAO.getActivePositions().then(positions => positions.length),
         this.configDAO.getConfigKeys().then(keys => keys.length),
         this.performanceDAO.getLatestMetrics(),
-        this.watchlistDAO.getAllWatchlists().then(lists => lists.length)
+        this.watchlistDAO.getAllWatchlists().then(lists => lists.length),
       ]);
 
       return {
@@ -474,7 +474,7 @@ export class DatabaseManager {
         activePositions,
         totalConfigs: configKeys,
         latestMetrics,
-        totalWatchlists: watchlists
+        totalWatchlists: watchlists,
       };
     } catch (error) {
       return {
@@ -482,7 +482,7 @@ export class DatabaseManager {
         activePositions: 0,
         totalConfigs: 0,
         latestMetrics: null,
-        totalWatchlists: 0
+        totalWatchlists: 0,
       };
     }
   }
@@ -503,4 +503,4 @@ export class DatabaseManager {
   invalidateCache(pattern?: string) {
     this.cache.invalidatePattern(pattern);
   }
-} 
+}

@@ -1,8 +1,8 @@
 /**
  * Sentiment Analysis Utility
- * 
+ *
  * Analyzes sentiment for tokens using Twitter API and VADER
- * 
+ *
  * @reference PRD.md#4.1 - Sentiment Analysis
  * @reference DTS.md#3.3 - SentimentAnalyzer
  */
@@ -38,7 +38,7 @@ export class SentimentAnalyzer {
     try {
       this.twitterClient = new TwitterApi(twitterBearerToken);
       this.vaderAnalyzer = new SentimentIntensityAnalyzer();
-      
+
       console.log('SentimentAnalyzer: Initialized successfully');
     } catch (error) {
       console.error('SentimentAnalyzer: Error initializing', error);
@@ -66,7 +66,7 @@ export class SentimentAnalyzer {
       const searchQuery = `${tokenSymbol} crypto`;
       const tweets = await this.twitterClient.v2.search(searchQuery, {
         max_results: 100,
-        'tweet.fields': ['created_at', 'text', 'public_metrics']
+        'tweet.fields': ['created_at', 'text', 'public_metrics'],
       });
 
       if (!tweets.data || tweets.data.length === 0) {
@@ -90,7 +90,7 @@ export class SentimentAnalyzer {
             negative: analysis.neg,
             neutral: analysis.neu,
             tweetCount: 1,
-            confidence: this.calculateTweetConfidence(tweet)
+            confidence: this.calculateTweetConfidence(tweet),
           });
 
           totalCompound += analysis.compound;
@@ -126,9 +126,9 @@ export class SentimentAnalyzer {
           negative: avgNegative,
           neutral: avgNeutral,
           tweetCount: sentimentResults.length,
-          confidence
+          confidence,
         },
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Cache the result
@@ -137,7 +137,7 @@ export class SentimentAnalyzer {
       console.log(`SentimentAnalyzer: Analysis complete for ${tokenSymbol}`, {
         sentiment: result.sentiment,
         confidence: result.confidence,
-        tweetCount: result.tweetCount
+        tweetCount: result.tweetCount,
       });
 
       return result;
@@ -156,7 +156,7 @@ export class SentimentAnalyzer {
       const searchQuery = 'solana crypto';
       const tweets = await this.twitterClient.v2.search(searchQuery, {
         max_results: 100,
-        'tweet.fields': ['created_at', 'text', 'public_metrics']
+        'tweet.fields': ['created_at', 'text', 'public_metrics'],
       });
 
       if (!tweets.data || tweets.data.length === 0) {
@@ -179,7 +179,7 @@ export class SentimentAnalyzer {
             negative: analysis.neg,
             neutral: analysis.neu,
             tweetCount: 1,
-            confidence: this.calculateTweetConfidence(tweet)
+            confidence: this.calculateTweetConfidence(tweet),
           });
 
           totalCompound += analysis.compound;
@@ -215,15 +215,15 @@ export class SentimentAnalyzer {
           negative: avgNegative,
           neutral: avgNeutral,
           tweetCount: sentimentResults.length,
-          confidence
+          confidence,
         },
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       console.log('SentimentAnalyzer: Market sentiment analysis complete', {
         sentiment: result.sentiment,
         confidence: result.confidence,
-        tweetCount: result.tweetCount
+        tweetCount: result.tweetCount,
       });
 
       return result;
@@ -245,7 +245,7 @@ export class SentimentAnalyzer {
       // Higher engagement = higher confidence
       const metrics = tweet.public_metrics || {};
       const engagement = (metrics.retweet_count || 0) + (metrics.like_count || 0) + (metrics.reply_count || 0);
-      
+
       if (engagement > 100) {
         confidence += 0.3;
       } else if (engagement > 50) {
@@ -322,7 +322,7 @@ export class SentimentAnalyzer {
 
       const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
       const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
-      
+
       return variance;
     } catch (error) {
       console.error('SentimentAnalyzer: Error calculating variance', error);
@@ -347,9 +347,9 @@ export class SentimentAnalyzer {
         negative: 0.33,
         neutral: 0.34,
         tweetCount: 0,
-        confidence: 0.5
+        confidence: 0.5,
       },
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -387,7 +387,7 @@ export class SentimentAnalyzer {
     try {
       this.cache.set(tokenSymbol, {
         result,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (error) {
       console.error('SentimentAnalyzer: Error caching result', error);
@@ -414,11 +414,11 @@ export class SentimentAnalyzer {
     try {
       return {
         size: this.cache.size,
-        keys: Array.from(this.cache.keys())
+        keys: Array.from(this.cache.keys()),
       };
     } catch (error) {
       console.error('SentimentAnalyzer: Error getting cache stats', error);
       return { size: 0, keys: [] };
     }
   }
-} 
+}

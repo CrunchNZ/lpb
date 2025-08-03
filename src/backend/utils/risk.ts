@@ -1,6 +1,6 @@
 /**
  * Risk Management System
- * 
+ *
  * Comprehensive risk management tools including:
  * - Portfolio risk monitoring
  * - Position sizing calculations
@@ -75,7 +75,7 @@ export interface RiskRecommendation {
 
 /**
  * Risk Management System Class
- * 
+ *
  * Provides comprehensive risk monitoring and management
  */
 export class RiskManagementSystem {
@@ -129,7 +129,7 @@ export class RiskManagementSystem {
         correlation,
         concentrationRisk,
         leverageRatio,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Store in history
@@ -222,7 +222,7 @@ export class RiskManagementSystem {
         reason: 'High drawdown approaching limit',
         priority: 'HIGH',
         expectedImpact: -0.1,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -234,7 +234,7 @@ export class RiskManagementSystem {
         reason: 'High concentration risk',
         priority: 'MEDIUM',
         expectedImpact: -0.05,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -246,7 +246,7 @@ export class RiskManagementSystem {
         reason: 'Leverage approaching limit',
         priority: 'HIGH',
         expectedImpact: -0.15,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -258,7 +258,7 @@ export class RiskManagementSystem {
         reason: 'Low portfolio diversification',
         priority: 'MEDIUM',
         expectedImpact: 0.05,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -279,9 +279,9 @@ export class RiskManagementSystem {
       const baseSize = this.config.maxPositionSize;
       const volatilityAdjustment = Math.max(0.1, 1 - volatility);
       const correlationAdjustment = Math.max(0.1, 1 - correlation);
-      
+
       const optimalSize = baseSize * volatilityAdjustment * correlationAdjustment;
-      
+
       return Math.min(optimalSize, this.config.maxPositionSize);
     } catch (error) {
       throw new Error(`Failed to calculate optimal position size: ${error}`);
@@ -293,7 +293,7 @@ export class RiskManagementSystem {
    */
   updatePortfolioHistory(portfolio: Portfolio): void {
     this.portfolioHistory.push(portfolio);
-    
+
     // Keep only last 100 entries
     if (this.portfolioHistory.length > 100) {
       this.portfolioHistory = this.portfolioHistory.slice(-100);
@@ -338,13 +338,13 @@ export class RiskManagementSystem {
   private calculatePortfolioRisk(portfolio: Portfolio): number {
     try {
       let totalRisk = 0;
-      
+
       for (const position of portfolio.positions) {
         const positionRisk = Math.abs(position.unrealizedPnLPercent) / 100;
         const weight = position.size / portfolio.totalValue;
         totalRisk += positionRisk * weight;
       }
-      
+
       return Math.min(totalRisk, 1);
     } catch (error) {
       return 0;
@@ -360,7 +360,7 @@ export class RiskManagementSystem {
       const volatility = this.calculateVolatility(portfolio);
       const confidenceLevel = 1.645; // 95% confidence
       const var95 = portfolio.totalValue * volatility * confidenceLevel;
-      
+
       return var95;
     } catch (error) {
       return 0;
@@ -373,19 +373,19 @@ export class RiskManagementSystem {
   private calculateMaxDrawdown(): number {
     try {
       if (this.portfolioHistory.length < 2) return 0;
-      
+
       let maxDrawdown = 0;
       let peak = this.portfolioHistory[0].totalValue;
-      
+
       for (const portfolio of this.portfolioHistory) {
         if (portfolio.totalValue > peak) {
           peak = portfolio.totalValue;
         }
-        
+
         const drawdown = (peak - portfolio.totalValue) / peak;
         maxDrawdown = Math.max(maxDrawdown, drawdown);
       }
-      
+
       return maxDrawdown;
     } catch (error) {
       return 0;
@@ -398,16 +398,16 @@ export class RiskManagementSystem {
   private calculateSharpeRatio(): number {
     try {
       if (this.portfolioHistory.length < 2) return 0;
-      
+
       const returns = this.portfolioHistory.slice(1).map((portfolio, index) => {
         const prevValue = this.portfolioHistory[index].totalValue;
         return (portfolio.totalValue - prevValue) / prevValue;
       });
-      
+
       const avgReturn = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
       const variance = returns.reduce((sum, ret) => sum + Math.pow(ret - avgReturn, 2), 0) / returns.length;
       const volatility = Math.sqrt(variance);
-      
+
       return volatility > 0 ? avgReturn / volatility : 0;
     } catch (error) {
       return 0;
@@ -420,16 +420,16 @@ export class RiskManagementSystem {
   private calculateVolatility(portfolio: Portfolio): number {
     try {
       if (this.portfolioHistory.length < 2) return 0;
-      
+
       const returns = this.portfolioHistory.slice(-20).map((p, index, arr) => {
         if (index === 0) return 0;
         const prevValue = arr[index - 1].totalValue;
         return (p.totalValue - prevValue) / prevValue;
       });
-      
+
       const avgReturn = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
       const variance = returns.reduce((sum, ret) => sum + Math.pow(ret - avgReturn, 2), 0) / returns.length;
-      
+
       return Math.sqrt(variance);
     } catch (error) {
       return 0;
@@ -442,14 +442,14 @@ export class RiskManagementSystem {
   private calculateCorrelation(portfolio: Portfolio): number {
     try {
       if (portfolio.positions.length < 2) return 0;
-      
+
       // Simplified correlation calculation
       const returns = portfolio.positions.map(p => p.unrealizedPnLPercent);
       const avgReturn = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
-      
+
       const covariance = returns.reduce((sum, ret) => sum + (ret - avgReturn) * (ret - avgReturn), 0);
       const variance = returns.reduce((sum, ret) => sum + Math.pow(ret - avgReturn, 2), 0);
-      
+
       return variance > 0 ? covariance / variance : 0;
     } catch (error) {
       return 0;
@@ -462,11 +462,11 @@ export class RiskManagementSystem {
   private calculateConcentrationRisk(portfolio: Portfolio): number {
     try {
       if (portfolio.positions.length === 0) return 0;
-      
+
       // Herfindahl-Hirschman Index for concentration
       const weights = portfolio.positions.map(p => p.size / portfolio.totalValue);
       const hhi = weights.reduce((sum, weight) => sum + Math.pow(weight, 2), 0);
-      
+
       return hhi;
     } catch (error) {
       return 0;
@@ -495,7 +495,7 @@ export class RiskManagementSystem {
     recommendation: string
   ): RiskAlert {
     const alertId = `risk-alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const alert: RiskAlert = {
       id: alertId,
       type,
@@ -503,7 +503,7 @@ export class RiskManagementSystem {
       message,
       recommendation,
       triggered: true,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     this.alerts.set(alertId, alert);
@@ -527,7 +527,7 @@ export class RiskManagementSystem {
       totalAlerts: alerts.length,
       criticalAlerts,
       portfolioHistoryLength: this.portfolioHistory.length,
-      riskHistoryLength: this.riskHistory.length
+      riskHistoryLength: this.riskHistory.length,
     };
   }
 }
@@ -537,4 +537,4 @@ export class RiskManagementSystem {
  */
 export function createRiskManagementSystem(config: RiskConfig): RiskManagementSystem {
   return new RiskManagementSystem(config);
-} 
+}

@@ -162,4 +162,4 @@ export const {
   resetFilters,
 } = dexscreenerSlice.actions;
 
-export default dexscreenerSlice.reducer; 
+export default dexscreenerSlice.reducer;

@@ -11,7 +11,7 @@ export class PositionDAO {
 
   async createPosition(position: Omit<Position, 'id'>): Promise<string> {
     const id = `pos_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return new Promise((resolve, reject) => {
       const stmt = this.db.prepare(`
         INSERT INTO positions (
@@ -34,7 +34,7 @@ export class PositionDAO {
         position.timestamp,
         position.status,
         position.pnl,
-        position.apy
+        position.apy,
       ], function(err) {
         if (err) {
           reject(err);
@@ -66,11 +66,11 @@ export class PositionDAO {
   async updatePosition(id: string, updates: Partial<Position>): Promise<boolean> {
     const fields = Object.keys(updates).filter(key => key !== 'id');
     const values = Object.values(updates);
-    
+
     if (fields.length === 0) return true;
 
     const setClause = fields.map(field => `${this.camelToSnake(field)} = ?`).join(', ');
-    
+
     return new Promise((resolve, reject) => {
       this.db.run(
         `UPDATE positions SET ${setClause} WHERE id = ?`,
@@ -193,11 +193,11 @@ export class PositionDAO {
       timestamp: row.timestamp,
       status: row.status as 'active' | 'closed' | 'pending',
       pnl: row.pnl,
-      apy: row.apy
+      apy: row.apy,
     };
   }
 
   private camelToSnake(str: string): string {
     return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
   }
-} 
+}

@@ -1,8 +1,8 @@
 /**
  * Conservative Strategy Implementation
- * 
+ *
  * Low-risk strategy with capital preservation focus
- * 
+ *
  * @reference PRD.md#4.1 - Strategy Execution
  * @reference DTS.md#3.1 - ConservativeStrategy.ts
  */
@@ -20,7 +20,7 @@ export class ConservativeStrategy implements Strategy {
       stopLoss: 0.08, // 8%
       takeProfit: 0.25, // 25%
       sentimentThreshold: 0.2, // Higher threshold than other strategies
-      ...config
+      ...config,
     };
   }
 
@@ -31,11 +31,11 @@ export class ConservativeStrategy implements Strategy {
   async shouldEnter(token: Token, marketData: MarketData): Promise<boolean> {
     try {
       // Entry conditions for conservative strategy (very strict)
-      const sentiment = token.sentiment;
+      const {sentiment} = token;
       const volume = token.volume24h;
-      const marketCap = token.marketCap;
-      const tvl = token.tvl;
-      
+      const {marketCap} = token;
+      const {tvl} = token;
+
       // Very conservative criteria for conservative strategy
       const meetsSentimentCriteria = sentiment > this.config.sentimentThreshold;
       const meetsVolumeCriteria = volume >= 100000; // High volume requirement
@@ -80,7 +80,7 @@ export class ConservativeStrategy implements Strategy {
         meetsMarketCapCriteria,
         meetsTvlCriteria,
         isTrending,
-        meetsVolatilityCriteria
+        meetsVolatilityCriteria,
       });
 
       return shouldEnter;
@@ -98,30 +98,30 @@ export class ConservativeStrategy implements Strategy {
     try {
       // Base position size from config
       const baseSize = portfolioValue * this.config.maxPositionSize;
-      
+
       // Conservative sentiment multiplier (very conservative)
       const sentimentMultiplier = Math.min(token.sentiment * 1.2, 1.0);
-      
+
       // Market cap multiplier (prefer larger, more established caps)
       const marketCapMultiplier = Math.min(token.marketCap / 1000000, 0.6);
-      
+
       // Volume multiplier (prefer high volume)
       const volumeMultiplier = Math.min(token.volume24h / 500000, 0.8);
-      
+
       // Stability multiplier (heavily weight stability)
       const stabilityMultiplier = this.calculateStabilityMultiplier(token);
-      
+
       // Liquidity multiplier (prefer high liquidity)
       const liquidityMultiplier = this.calculateLiquidityMultiplier(token);
-      
+
       // Calculate final position size
-      const positionSize = baseSize * sentimentMultiplier * marketCapMultiplier * 
+      const positionSize = baseSize * sentimentMultiplier * marketCapMultiplier *
                           volumeMultiplier * stabilityMultiplier * liquidityMultiplier;
-      
+
       // Ensure position size doesn't exceed maximum
       const maxPositionSize = portfolioValue * this.config.maxPositionSize;
       const finalPositionSize = Math.min(positionSize, maxPositionSize);
-      
+
       // Minimum position size check
       const minPositionSize = 25; // $25 minimum for conservative strategy
       if (finalPositionSize < minPositionSize) {
@@ -137,7 +137,7 @@ export class ConservativeStrategy implements Strategy {
         liquidityMultiplier,
         positionSize,
         finalPositionSize,
-        minPositionSize
+        minPositionSize,
       });
 
       return finalPositionSize;
@@ -153,21 +153,21 @@ export class ConservativeStrategy implements Strategy {
    */
   async shouldExit(position: Position, currentData: MarketData): Promise<boolean> {
     try {
-      const pnl = position.pnl;
+      const {pnl} = position;
       const pnlPercentage = pnl / position.size;
-      const sentiment = currentData.token.sentiment;
-      
+      const {sentiment} = currentData.token;
+
       // Exit conditions for conservative strategy (very conservative)
       const stopLossTriggered = pnlPercentage <= -this.config.stopLoss;
       const takeProfitTriggered = pnlPercentage >= this.config.takeProfit;
       const negativeSentimentSpike = sentiment < -0.1; // Very conservative sentiment exit
-      
+
       // Additional exit conditions for conservative strategy
       const volumeDrop = currentData.token.volume24h < position.entryPrice * 5000; // Volume dropped
       const marketCapDrop = currentData.token.marketCap < position.entryPrice * 200000; // Market cap dropped
       const volatilitySpike = this.calculateVolatility(currentData.priceHistory) > 0.3; // High volatility
       const liquidityDrop = this.checkLiquidityDrop(currentData.token);
-      
+
       const shouldExit = stopLossTriggered ||
                         takeProfitTriggered ||
                         negativeSentimentSpike ||
@@ -186,7 +186,7 @@ export class ConservativeStrategy implements Strategy {
         marketCapDrop,
         volatilitySpike,
         liquidityDrop,
-        shouldExit
+        shouldExit,
       });
 
       return shouldExit;
@@ -204,25 +204,25 @@ export class ConservativeStrategy implements Strategy {
     try {
       // Conservative strategy uses narrow price ranges
       const volatility = this.calculateVolatility(token.priceHistory || []);
-      
+
       // Base range percentage (narrow for conservative strategy)
       const baseRangePercentage = 0.06; // 6% base range
-      
+
       // Adjust range based on volatility (very conservative)
       const volatilityMultiplier = Math.min(volatility * 1.0, 1.0);
       const rangePercentage = baseRangePercentage * volatilityMultiplier;
-      
+
       // Calculate min and max prices
       const range = rangePercentage / 2;
       const minPrice = currentPrice * (1 - range);
       const maxPrice = currentPrice * (1 + range);
-      
+
       console.log(`ConservativeStrategy: Price range calculation for ${token.symbol}`, {
         currentPrice,
         volatility,
         rangePercentage,
         minPrice,
-        maxPrice
+        maxPrice,
       });
 
       return [minPrice, maxPrice];
@@ -232,7 +232,7 @@ export class ConservativeStrategy implements Strategy {
       const defaultRange = 0.05; // 5% default range
       return [
         currentPrice * (1 - defaultRange / 2),
-        currentPrice * (1 + defaultRange / 2)
+        currentPrice * (1 + defaultRange / 2),
       ];
     }
   }
@@ -257,7 +257,7 @@ export class ConservativeStrategy implements Strategy {
 
       // Calculate average volatility
       const avgVolatility = priceChanges.reduce((sum, change) => sum + change, 0) / priceChanges.length;
-      
+
       return Math.min(avgVolatility, 0.3); // Cap at 30% for conservative strategy
     } catch (error) {
       console.error('ConservativeStrategy: Error calculating volatility', error);
@@ -351,7 +351,7 @@ export class ConservativeStrategy implements Strategy {
     try {
       // Check if TVL is high relative to market cap
       const tvlToMarketCapRatio = token.tvl / token.marketCap;
-      
+
       // Consider strong if TVL is > 10% of market cap (more realistic)
       return tvlToMarketCapRatio > 0.1;
     } catch (error) {
@@ -407,7 +407,7 @@ export class ConservativeStrategy implements Strategy {
 
       // Higher TVL to market cap ratio = better liquidity
       const tvlToMarketCapRatio = token.tvl / token.marketCap;
-      
+
       if (tvlToMarketCapRatio > 0.3) {
         multiplier *= 1.3;
       } else if (tvlToMarketCapRatio > 0.2) {
@@ -452,4 +452,4 @@ export class ConservativeStrategy implements Strategy {
   getStrategyDescription(): string {
     return 'Low-risk strategy with capital preservation focus for established meme coins';
   }
-} 
+}

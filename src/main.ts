@@ -20,12 +20,12 @@ function createWindow(): void {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
     },
     icon: path.join(__dirname, '../assets/icon.png'),
     show: false, // Don't show until ready
     titleBarStyle: 'default',
-    frame: true
+    frame: true,
   });
 
   // Load the app
@@ -56,7 +56,7 @@ function createTray(): void {
   // Create tray icon
   const iconPath = path.join(__dirname, '../assets/tray-icon.png');
   const icon = nativeImage.createFromPath(iconPath);
-  
+
   tray = new Tray(icon);
   tray.setToolTip('Solana Liquidity Sentinel');
 
@@ -67,34 +67,34 @@ function createTray(): void {
       click: () => {
         mainWindow?.show();
         mainWindow?.focus();
-      }
+      },
     },
     {
       label: 'Hide App',
       click: () => {
         mainWindow?.hide();
-      }
+      },
     },
     { type: 'separator' },
     {
       label: 'Start Bot',
       click: () => {
         mainWindow?.webContents.send('bot-action', { action: 'start' });
-      }
+      },
     },
     {
       label: 'Stop Bot',
       click: () => {
         mainWindow?.webContents.send('bot-action', { action: 'stop' });
-      }
+      },
     },
     { type: 'separator' },
     {
       label: 'Quit',
       click: () => {
         app.quit();
-      }
-    }
+      },
+    },
   ]);
 
   tray.setContextMenu(contextMenu);
@@ -137,7 +137,7 @@ function showNotification(title: string, body: string): void {
     new Notification({
       title,
       body,
-      icon: path.join(__dirname, '../assets/icon.png')
+      icon: path.join(__dirname, '../assets/icon.png'),
     }).show();
   }
 }
@@ -202,7 +202,7 @@ ipcMain.handle('get-logs', () => {
       return logFiles.map(file => ({
         name: file,
         path: path.join(logsPath, file),
-        size: fs.statSync(path.join(logsPath, file)).size
+        size: fs.statSync(path.join(logsPath, file)).size,
       }));
     }
     return [];
@@ -253,4 +253,4 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   showNotification('Error', 'An unexpected error occurred. Check the logs for details.');
-}); 
+});

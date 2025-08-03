@@ -1,6 +1,6 @@
 /**
  * Core types and interfaces for strategy implementation
- * 
+ *
  * @reference PRD.md#4.1 - Core Bot Functionality
  * @reference DTS.md#2.1 - Core Interfaces
  */
@@ -127,7 +127,7 @@ export interface SentimentPoint {
  */
 export interface Strategy {
   readonly config: StrategyConfig;
-  
+
   /**
    * Determines if a position should be entered for the given token
    * @param token - Token information
@@ -135,7 +135,7 @@ export interface Strategy {
    * @returns Promise<boolean> - Whether to enter position
    */
   shouldEnter(token: Token, marketData: MarketData): Promise<boolean>;
-  
+
   /**
    * Calculates position size based on strategy and market conditions
    * @param token - Token information
@@ -143,7 +143,7 @@ export interface Strategy {
    * @returns Promise<number> - Position size in USD
    */
   calculatePositionSize(token: Token, portfolioValue: number): Promise<number>;
-  
+
   /**
    * Determines if a position should be exited
    * @param position - Current position
@@ -151,7 +151,7 @@ export interface Strategy {
    * @returns Promise<boolean> - Whether to exit position
    */
   shouldExit(position: Position, currentData: MarketData): Promise<boolean>;
-  
+
   /**
    * Calculates price range for position
    * @param token - Token information
@@ -210,4 +210,4 @@ export interface MarketAnalysis {
   liquidity: number;
   trend: 'bullish' | 'bearish' | 'neutral';
   confidence: number;
-} 
+}

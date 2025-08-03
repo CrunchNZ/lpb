@@ -11,7 +11,7 @@ export class ConfigDAO {
   async setConfig(key: string, value: string): Promise<string> {
     const id = `config_${key}_${Date.now()}`;
     const updatedAt = Date.now();
-    
+
     return new Promise((resolve, reject) => {
       const stmt = this.db.prepare(`
         INSERT OR REPLACE INTO bot_config (id, key, value, updated_at)
@@ -118,7 +118,7 @@ export class ConfigDAO {
   }
 
   async setConfigs(configs: Record<string, string>): Promise<string[]> {
-    const promises = Object.entries(configs).map(([key, value]) => 
+    const promises = Object.entries(configs).map(([key, value]) =>
       this.setConfig(key, value)
     );
     return Promise.all(promises);
@@ -129,16 +129,16 @@ export class ConfigDAO {
       const value = await this.getConfig(key);
       return { key, value };
     });
-    
+
     const results = await Promise.all(promises);
     const configs: Record<string, string> = {};
-    
+
     results.forEach(({ key, value }) => {
       if (value !== null) {
         configs[key] = value;
       }
     });
-    
+
     return configs;
   }
 
@@ -164,7 +164,7 @@ export class ConfigDAO {
 
   async cleanupOldConfigs(olderThanDays: number): Promise<number> {
     const cutoffTime = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
-    
+
     return new Promise((resolve, reject) => {
       this.db.run(
         'DELETE FROM bot_config WHERE updated_at < ?',
@@ -185,7 +185,7 @@ export class ConfigDAO {
       id: row.id,
       key: row.key,
       value: row.value,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
     };
   }
-} 
+}

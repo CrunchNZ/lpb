@@ -114,4 +114,4 @@ export const {
   resetBot,
 } = botSlice.actions;
 
-export default botSlice.reducer; 
+export default botSlice.reducer;

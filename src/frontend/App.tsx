@@ -22,17 +22,17 @@ export const App: React.FC = () => {
         <div className="apple-app min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 apple-transition">
           {/* Main content */}
           <PageRouter />
-          
+
           {/* Bottom tab navigation */}
           <BottomTabNavigation
             activeTab={activeTab}
             onTabChange={handleTabChange}
           />
-          
+
           {/* Modal manager for detailed views */}
           <ModalManager />
         </div>
       </AnimationProvider>
     </ThemeProvider>
   );
-}; 
+};

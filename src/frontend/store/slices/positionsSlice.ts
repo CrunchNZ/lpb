@@ -119,8 +119,8 @@ const calculateStats = (positions: Position[]) => {
   const closedPositions = positions.filter(p => p.status === 'closed').length;
   const totalValue = positions.reduce((sum, p) => sum + (p.amountA * p.currentPrice + p.amountB), 0);
   const totalPnl = positions.reduce((sum, p) => sum + p.pnl, 0);
-  const averageApy = positions.length > 0 
-    ? positions.reduce((sum, p) => sum + p.apy, 0) / positions.length 
+  const averageApy = positions.length > 0
+    ? positions.reduce((sum, p) => sum + p.apy, 0) / positions.length
     : 0;
 
   return {
@@ -149,4 +149,4 @@ export const {
   updatePositionPrice,
 } = positionsSlice.actions;
 
-export default positionsSlice.reducer; 
+export default positionsSlice.reducer;

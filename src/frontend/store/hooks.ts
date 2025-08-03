@@ -101,7 +101,7 @@ export const usePositions = () => {
       closePosition: (id: string) => dispatch(closePosition(id)),
       pausePosition: (id: string) => dispatch(pausePosition(id)),
       resumePosition: (id: string) => dispatch(resumePosition(id)),
-      updatePositionPrice: (id: string, currentPrice: number, pnl: number) => 
+      updatePositionPrice: (id: string, currentPrice: number, pnl: number) =>
         dispatch(updatePositionPrice({ id, currentPrice, pnl })),
     },
   };
@@ -173,7 +173,7 @@ export const useNotifications = () => {
 export const useLoading = (key: string) => {
   const { loadingStates, actions } = useUI();
   const isLoading = loadingStates[key] || false;
-  
+
   return {
     isLoading,
     setLoading: (loading: boolean) => actions.setLoadingState(key, loading),
@@ -184,11 +184,11 @@ export const useLoading = (key: string) => {
 export const useModal = (key: string) => {
   const { modals, actions } = useUI();
   const modal = modals[key] || { open: false, data: null };
-  
+
   return {
     isOpen: modal.open,
     data: modal.data,
     open: (data?: any) => actions.openModal(key, data),
     close: () => actions.closeModal(key),
   };
-}; 
+};

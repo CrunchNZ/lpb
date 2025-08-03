@@ -1,6 +1,6 @@
 /**
  * Rug Check Analyzer
- * 
+ *
  * Comprehensive analysis tool to detect potential rug pulls and suspicious token behavior:
  * - Liquidity analysis
  * - Holder distribution analysis
@@ -108,7 +108,7 @@ export interface SocialAnalysis {
 
 /**
  * Rug Check Analyzer Class
- * 
+ *
  * Provides comprehensive analysis to detect potential rug pulls
  * and suspicious token behavior
  */
@@ -130,19 +130,19 @@ export class RugCheckAnalyzer {
 
       // Get token information
       const tokenInfo = await this.getTokenInfo(tokenAddress);
-      
+
       // Analyze liquidity
       const liquidityAnalysis = await this.analyzeLiquidity(tokenAddress);
-      
+
       // Analyze holders
       const holderAnalysis = await this.analyzeHolders(tokenAddress);
-      
+
       // Analyze trading patterns
       const tradingAnalysis = await this.analyzeTrading(tokenAddress);
-      
+
       // Analyze contract
       const contractAnalysis = await this.analyzeContract(tokenAddress);
-      
+
       // Analyze social sentiment
       const socialAnalysis = await this.analyzeSocial(tokenAddress);
 
@@ -152,7 +152,7 @@ export class RugCheckAnalyzer {
         holderAnalysis.score,
         tradingAnalysis.score,
         contractAnalysis.score,
-        socialAnalysis.score
+        socialAnalysis.score,
       ]);
 
       const riskLevel = this.getRiskLevel(riskScore);
@@ -161,7 +161,7 @@ export class RugCheckAnalyzer {
         holderAnalysis,
         tradingAnalysis,
         contractAnalysis,
-        socialAnalysis
+        socialAnalysis,
       ]);
       const recommendations = this.generateRecommendations(riskLevel, warnings);
 
@@ -176,9 +176,9 @@ export class RugCheckAnalyzer {
           holders: holderAnalysis,
           trading: tradingAnalysis,
           contract: contractAnalysis,
-          social: socialAnalysis
+          social: socialAnalysis,
         },
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       console.log(`RugCheck: Analysis complete. Risk score: ${riskScore}, Level: ${riskLevel}`);
@@ -194,7 +194,7 @@ export class RugCheckAnalyzer {
   private async getTokenInfo(tokenAddress: string): Promise<TokenInfo> {
     try {
       const mint = new PublicKey(tokenAddress);
-      
+
       // In a real implementation, this would fetch from token APIs
       // For now, we'll create mock data
       const tokenInfo: TokenInfo = {
@@ -205,7 +205,7 @@ export class RugCheckAnalyzer {
         totalSupply: 1000000000,
         circulatingSupply: 800000000,
         marketCap: 1000000,
-        price: 0.001
+        price: 0.001,
       };
 
       return tokenInfo;
@@ -225,7 +225,7 @@ export class RugCheckAnalyzer {
         lockedLiquidity: 400000,
         liquidityLockPercentage: 80,
         liquidityProviders: 150,
-        averageLockTime: 30 // days
+        averageLockTime: 30, // days
       };
 
       let score = 0;
@@ -260,7 +260,7 @@ export class RugCheckAnalyzer {
         totalLiquidity: mockLiquidity.totalLiquidity,
         lockedPercentage: mockLiquidity.liquidityLockPercentage,
         providerCount: mockLiquidity.liquidityProviders,
-        riskFactors
+        riskFactors,
       };
     } catch (error) {
       throw new Error(`Failed to analyze liquidity: ${error}`);
@@ -279,15 +279,15 @@ export class RugCheckAnalyzer {
           balance: 200000000,
           percentage: 20,
           isContract: false,
-          lastTransaction: new Date()
+          lastTransaction: new Date(),
         },
         {
           address: 'holder2',
           balance: 150000000,
           percentage: 15,
           isContract: false,
-          lastTransaction: new Date()
-        }
+          lastTransaction: new Date(),
+        },
       ];
 
       let score = 0;
@@ -307,7 +307,7 @@ export class RugCheckAnalyzer {
       }
 
       // Calculate concentration risk
-      const concentrationRisk = mockHolders.reduce((sum, holder) => 
+      const concentrationRisk = mockHolders.reduce((sum, holder) =>
         sum + Math.pow(holder.percentage / 100, 2), 0
       );
 
@@ -321,7 +321,7 @@ export class RugCheckAnalyzer {
         topHolderPercentage,
         holderCount: mockHolders.length,
         concentrationRisk,
-        riskFactors
+        riskFactors,
       };
     } catch (error) {
       throw new Error(`Failed to analyze holders: ${error}`);
@@ -337,7 +337,7 @@ export class RugCheckAnalyzer {
       const mockData = {
         volume24h: 50000,
         priceVolatility: 0.15,
-        unusualPatterns: ['Large sell orders', 'Price manipulation']
+        unusualPatterns: ['Large sell orders', 'Price manipulation'],
       };
 
       let score = 0;
@@ -366,7 +366,7 @@ export class RugCheckAnalyzer {
         volume24h: mockData.volume24h,
         priceVolatility: mockData.priceVolatility,
         unusualPatterns: mockData.unusualPatterns,
-        riskFactors
+        riskFactors,
       };
     } catch (error) {
       throw new Error(`Failed to analyze trading: ${error}`);
@@ -383,7 +383,7 @@ export class RugCheckAnalyzer {
         isVerified: false,
         hasProxy: true,
         hasBlacklist: true,
-        hasMaxTxLimit: true
+        hasMaxTxLimit: true,
       };
 
       let score = 0;
@@ -415,7 +415,7 @@ export class RugCheckAnalyzer {
         hasProxy: mockContract.hasProxy,
         hasBlacklist: mockContract.hasBlacklist,
         hasMaxTxLimit: mockContract.hasMaxTxLimit,
-        riskFactors
+        riskFactors,
       };
     } catch (error) {
       throw new Error(`Failed to analyze contract: ${error}`);
@@ -431,7 +431,7 @@ export class RugCheckAnalyzer {
       const mockSocial = {
         sentimentScore: 0.3, // -1 to 1, negative = bad
         socialMentions: 50,
-        communityTrust: 0.4 // 0 to 1
+        communityTrust: 0.4, // 0 to 1
       };
 
       let score = 0;
@@ -457,7 +457,7 @@ export class RugCheckAnalyzer {
         sentimentScore: mockSocial.sentimentScore,
         socialMentions: mockSocial.socialMentions,
         communityTrust: mockSocial.communityTrust,
-        riskFactors
+        riskFactors,
       };
     } catch (error) {
       throw new Error(`Failed to analyze social: ${error}`);
@@ -470,10 +470,10 @@ export class RugCheckAnalyzer {
   private calculateRiskScore(scores: number[]): number {
     // Weighted average of all scores
     const weights = [0.25, 0.25, 0.20, 0.20, 0.10]; // liquidity, holders, trading, contract, social
-    const weightedSum = scores.reduce((sum, score, index) => 
+    const weightedSum = scores.reduce((sum, score, index) =>
       sum + score * weights[index], 0
     );
-    
+
     return Math.round(weightedSum);
   }
 
@@ -492,7 +492,7 @@ export class RugCheckAnalyzer {
    */
   private generateWarnings(analyses: any[]): string[] {
     const warnings: string[] = [];
-    
+
     analyses.forEach(analysis => {
       analysis.riskFactors.forEach((factor: string) => {
         if (analysis.score > 30) {
@@ -569,4 +569,4 @@ export class RugCheckAnalyzer {
  */
 export function createRugCheckAnalyzer(config: RugCheckConfig): RugCheckAnalyzer {
   return new RugCheckAnalyzer(config);
-} 
+}

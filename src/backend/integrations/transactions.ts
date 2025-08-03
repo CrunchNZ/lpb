@@ -1,6 +1,6 @@
 /**
  * Transaction Signing Capabilities
- * 
+ *
  * Handles all transaction-related operations including:
  * - Complex transaction creation and assembly
  * - Multi-signature transaction support
@@ -9,23 +9,23 @@
  * - Transaction monitoring and confirmation
  */
 
-import { 
-  Connection, 
-  PublicKey, 
-  Keypair, 
-  Transaction, 
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  Transaction,
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
   sendAndConfirmTransaction,
   SimulatedTransactionResponse,
-  Commitment
+  Commitment,
 } from '@solana/web3.js';
-import { 
+import {
   TOKEN_PROGRAM_ID,
   createTransferInstruction,
   getAssociatedTokenAddress,
-  createAssociatedTokenAccountInstruction
+  createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 
 // Types for transaction management
@@ -72,7 +72,7 @@ export interface TransactionMonitor {
 
 /**
  * Transaction Manager Class
- * 
+ *
  * Provides comprehensive transaction management functionality
  * for Solana blockchain interactions
  */
@@ -107,7 +107,7 @@ export class TransactionManager {
   createTransaction(request: TransactionRequest): Transaction {
     try {
       const transaction = new Transaction();
-      
+
       // Add instructions
       request.instructions.forEach(instruction => {
         transaction.add(instruction);
@@ -134,15 +134,15 @@ export class TransactionManager {
   async createVersionedTransaction(request: TransactionRequest): Promise<VersionedTransaction> {
     try {
       const blockhash = await this.connection.getLatestBlockhash();
-      
+
       const messageV0 = new TransactionMessage({
         payerKey: request.feePayer,
         recentBlockhash: blockhash.blockhash,
-        instructions: request.instructions
+        instructions: request.instructions,
       }).compileToV0Message();
 
       const transaction = new VersionedTransaction(messageV0);
-      
+
       // Add signers
       request.signers.forEach(signer => {
         transaction.sign([signer]);
@@ -173,7 +173,7 @@ export class TransactionManager {
         error: simulation.value.err ? simulation.value.err.toString() : undefined,
         logs: simulation.value.logs,
         unitsConsumed: simulation.value.unitsConsumed,
-        accounts: simulation.value.accounts
+        accounts: simulation.value.accounts,
       };
 
       if (result.success) {
@@ -186,7 +186,7 @@ export class TransactionManager {
     } catch (error) {
       return {
         success: false,
-        error: `Simulation error: ${error}`
+        error: `Simulation error: ${error}`,
       };
     }
   }
@@ -210,7 +210,7 @@ export class TransactionManager {
           signers,
           {
             commitment: this.config.commitment,
-            preflightCommitment: this.config.preflightCommitment
+            preflightCommitment: this.config.preflightCommitment,
           }
         );
 
@@ -218,7 +218,7 @@ export class TransactionManager {
           signature,
           status: 'confirmed',
           timestamp: new Date(),
-          slot: await this.connection.getSlot()
+          slot: await this.connection.getSlot(),
         };
 
         console.log(`Transactions: Transaction confirmed ${signature}`);
@@ -240,7 +240,7 @@ export class TransactionManager {
       status: 'failed',
       error: lastError?.message || 'Transaction failed after all retries',
       timestamp: new Date(),
-      slot: 0
+      slot: 0,
     };
 
     console.error(`Transactions: Transaction failed after ${this.config.maxRetries} attempts`);
@@ -261,7 +261,7 @@ export class TransactionManager {
         transaction,
         signers,
         {
-          preflightCommitment: this.config.preflightCommitment
+          preflightCommitment: this.config.preflightCommitment,
         }
       );
 
@@ -269,7 +269,7 @@ export class TransactionManager {
         signature,
         status: 'pending',
         timestamp: new Date(),
-        slot: await this.connection.getSlot()
+        slot: await this.connection.getSlot(),
       };
 
       console.log(`Transactions: Transaction sent ${signature}`);
@@ -280,7 +280,7 @@ export class TransactionManager {
         status: 'failed',
         error: `Send error: ${error}`,
         timestamp: new Date(),
-        slot: 0
+        slot: 0,
       };
 
       console.error(`Transactions: Failed to send transaction: ${error}`);
@@ -304,7 +304,7 @@ export class TransactionManager {
         confirmations: 0,
         requiredConfirmations,
         startTime: new Date(),
-        lastCheck: new Date()
+        lastCheck: new Date(),
       };
 
       this.monitors.set(signature, monitor);
@@ -321,7 +321,7 @@ export class TransactionManager {
           status: 'failed',
           error: confirmation.value.err.toString(),
           timestamp: new Date(),
-          slot: confirmation.context.slot
+          slot: confirmation.context.slot,
         };
 
         console.error(`Transactions: Transaction failed ${signature}`);
@@ -333,7 +333,7 @@ export class TransactionManager {
         status: 'confirmed',
         timestamp: new Date(),
         slot: confirmation.context.slot,
-        confirmationTime: Date.now() - monitor.startTime.getTime()
+        confirmationTime: Date.now() - monitor.startTime.getTime(),
       };
 
       console.log(`Transactions: Transaction confirmed ${signature}`);
@@ -344,7 +344,7 @@ export class TransactionManager {
         status: 'failed',
         error: `Monitor error: ${error}`,
         timestamp: new Date(),
-        slot: 0
+        slot: 0,
       };
 
       console.error(`Transactions: Failed to monitor transaction: ${error}`);
@@ -373,7 +373,7 @@ export class TransactionManager {
 
       // Check if destination token account exists
       const toTokenAccountInfo = await this.connection.getAccountInfo(toTokenAccount);
-      
+
       if (!toTokenAccountInfo) {
         // Create associated token account for destination
         instructions.push(
@@ -399,7 +399,7 @@ export class TransactionManager {
       const request: TransactionRequest = {
         instructions,
         signers: [],
-        feePayer: from
+        feePayer: from,
       };
 
       console.log(`Transactions: Created token transfer transaction for ${amount} tokens`);
@@ -421,7 +421,7 @@ export class TransactionManager {
       const request: TransactionRequest = {
         instructions,
         signers,
-        feePayer
+        feePayer,
       };
 
       console.log(`Transactions: Created multi-instruction transaction with ${instructions.length} instructions`);
@@ -441,7 +441,7 @@ export class TransactionManager {
   }> {
     try {
       const transaction = await this.connection.getTransaction(signature, {
-        commitment: this.config.commitment
+        commitment: this.config.commitment,
       });
 
       if (!transaction) {
@@ -451,18 +451,18 @@ export class TransactionManager {
       if (transaction.meta?.err) {
         return {
           status: 'failed',
-          error: transaction.meta.err.toString()
+          error: transaction.meta.err.toString(),
         };
       }
 
       return {
         status: 'confirmed',
-        confirmations: transaction.meta?.confirmationStatus === 'confirmed' ? 1 : 0
+        confirmations: transaction.meta?.confirmationStatus === 'confirmed' ? 1 : 0,
       };
     } catch (error) {
       return {
         status: 'failed',
-        error: `Status check error: ${error}`
+        error: `Status check error: ${error}`,
       };
     }
   }
@@ -490,7 +490,7 @@ export class TransactionManager {
   } {
     return {
       activeMonitors: this.monitors.size,
-      totalMonitors: this.monitors.size // In a real implementation, you'd track total
+      totalMonitors: this.monitors.size, // In a real implementation, you'd track total
     };
   }
 
@@ -510,13 +510,13 @@ export class TransactionManager {
       return {
         connected: true,
         blockHeight,
-        latency
+        latency,
       };
     } catch (error) {
       return {
         connected: false,
         blockHeight: 0,
-        latency: 0
+        latency: 0,
       };
     }
   }
@@ -527,4 +527,4 @@ export class TransactionManager {
  */
 export function createTransactionManager(config: TransactionConfig): TransactionManager {
   return new TransactionManager(config);
-} 
+}

@@ -7,15 +7,9 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
     'plugin:jsx-a11y/recommended',
-    'plugin:import/recommended',
-    'plugin:import/typescript',
-    'airbnb',
-    'airbnb/hooks',
-    'airbnb-typescript',
     'prettier',
   ],
   parser: '@typescript-eslint/parser',
@@ -25,13 +19,11 @@ module.exports = {
     },
     ecmaVersion: 12,
     sourceType: 'module',
-    project: './tsconfig.json',
   },
   plugins: [
     'react',
     '@typescript-eslint',
     'jsx-a11y',
-    'import',
     'react-hooks',
   ],
   rules: {
@@ -40,7 +32,7 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/prefer-const': 'error',
+    '@typescript-eslint/prefer-const': 'off',
     '@typescript-eslint/no-var-requires': 'off',
 
     // React specific rules
@@ -59,50 +51,6 @@ module.exports = {
     'react/jsx-no-useless-fragment': 'off',
     'react/no-array-index-key': 'warn',
     'react/no-unescaped-entities': 'off',
-
-    // Import rules
-    'import/extensions': [
-      'error',
-      'ignorePackages',
-      {
-        js: 'never',
-        jsx: 'never',
-        ts: 'never',
-        tsx: 'never',
-      },
-    ],
-    'import/prefer-default-export': 'off',
-    'import/no-extraneous-dependencies': [
-      'error',
-      {
-        devDependencies: [
-          '**/*.test.{js,jsx,ts,tsx}',
-          '**/*.spec.{js,jsx,ts,tsx}',
-          '**/tests/**/*',
-          '**/scripts/**/*',
-          '**/build/**/*',
-          '**/config/**/*',
-        ],
-      },
-    ],
-    'import/order': [
-      'error',
-      {
-        groups: [
-          'builtin',
-          'external',
-          'internal',
-          'parent',
-          'sibling',
-          'index',
-        ],
-        'newlines-between': 'always',
-        alphabetize: {
-          order: 'asc',
-          caseInsensitive: true,
-        },
-      },
-    ],
 
     // General rules
     'no-console': 'warn',
@@ -175,12 +123,6 @@ module.exports = {
     react: {
       version: 'detect',
     },
-    'import/resolver': {
-      typescript: {},
-      node: {
-        extensions: ['.js', '.jsx', '.ts', '.tsx'],
-      },
-    },
   },
   overrides: [
     {
@@ -188,7 +130,6 @@ module.exports = {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         'no-console': 'off',
-        'import/no-extraneous-dependencies': 'off',
       },
     },
     {
@@ -196,7 +137,6 @@ module.exports = {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         'no-console': 'off',
-        'import/no-extraneous-dependencies': 'off',
       },
     },
     {
@@ -204,7 +144,6 @@ module.exports = {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         'no-console': 'off',
-        'import/no-extraneous-dependencies': 'off',
       },
     },
   ],

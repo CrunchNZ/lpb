@@ -1,6 +1,6 @@
 /**
  * Market Data Utilities
- * 
+ *
  * Comprehensive market data analysis tools including:
  * - Price feeds and real-time data
  * - Volume analysis and liquidity metrics
@@ -93,7 +93,7 @@ export interface MarketAlert {
 
 /**
  * Market Data Manager Class
- * 
+ *
  * Provides comprehensive market data analysis and monitoring
  */
 export class MarketDataManager {
@@ -143,7 +143,7 @@ export class MarketDataManager {
         changePercent24h: this.generateMockChangePercent(),
         volume24h: this.generateMockVolume(),
         marketCap: this.generateMockMarketCap(),
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Cache the result
@@ -175,7 +175,7 @@ export class MarketDataManager {
         volume30d: this.generateMockVolume() * 30,
         averageVolume: this.generateMockVolume() * 5,
         volumeChange24h: this.generateMockChangePercent(),
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Cache the result
@@ -207,7 +207,7 @@ export class MarketDataManager {
         liquidityProviders: Math.floor(Math.random() * 100) + 50,
         averageLockTime: Math.floor(Math.random() * 30) + 7,
         liquidityChange24h: this.generateMockChangePercent(),
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Cache the result
@@ -232,20 +232,20 @@ export class MarketDataManager {
         macd: {
           value: this.generateMockMACD(),
           signal: this.generateMockMACD() * 0.9,
-          histogram: this.generateMockMACD() * 0.1
+          histogram: this.generateMockMACD() * 0.1,
         },
         bollingerBands: {
           upper: this.generateMockPrice(symbol) * 1.1,
           middle: this.generateMockPrice(symbol),
-          lower: this.generateMockPrice(symbol) * 0.9
+          lower: this.generateMockPrice(symbol) * 0.9,
         },
         movingAverages: {
           sma20: this.generateMockPrice(symbol) * 0.98,
           sma50: this.generateMockPrice(symbol) * 0.95,
           ema12: this.generateMockPrice(symbol) * 0.99,
-          ema26: this.generateMockPrice(symbol) * 0.97
+          ema26: this.generateMockPrice(symbol) * 0.97,
         },
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       console.log(`Market: Calculated indicators for ${symbol}`);
@@ -268,7 +268,7 @@ export class MarketDataManager {
         newsSentiment: this.generateMockSentiment(),
         communityTrust: Math.random() * 0.5 + 0.5,
         fearGreedIndex: Math.floor(Math.random() * 100),
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       console.log(`Market: Analyzed sentiment for ${symbol}`);
@@ -288,7 +288,7 @@ export class MarketDataManager {
     value: number
   ): string {
     const alertId = `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const alert: MarketAlert = {
       id: alertId,
       symbol,
@@ -296,7 +296,7 @@ export class MarketDataManager {
       condition,
       value,
       triggered: false,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     this.alerts.set(alertId, alert);
@@ -400,7 +400,7 @@ export class MarketDataManager {
           this.getVolumeData(symbol),
           this.getLiquidityData(symbol),
           this.getMarketIndicators(symbol),
-          this.getMarketSentiment(symbol)
+          this.getMarketSentiment(symbol),
         ]);
 
         summary[symbol] = {
@@ -408,7 +408,7 @@ export class MarketDataManager {
           volume,
           liquidity,
           indicators,
-          sentiment
+          sentiment,
         };
       } catch (error) {
         console.error(`Failed to get summary for ${symbol}: ${error}`);
@@ -441,7 +441,7 @@ export class MarketDataManager {
       priceCacheSize: this.priceCache.size,
       volumeCacheSize: this.volumeCache.size,
       liquidityCacheSize: this.liquidityCache.size,
-      alertCount: this.alerts.size
+      alertCount: this.alerts.size,
     };
   }
 
@@ -489,4 +489,4 @@ export class MarketDataManager {
  */
 export function createMarketDataManager(config: MarketDataConfig): MarketDataManager {
   return new MarketDataManager(config);
-} 
+}

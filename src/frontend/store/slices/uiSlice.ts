@@ -245,4 +245,4 @@ export const {
   openPoolDetail,
 } = uiSlice.actions;
 
-export default uiSlice.reducer; 
+export default uiSlice.reducer;

@@ -1,6 +1,6 @@
 /**
  * Meteora SDK Integration
- * 
+ *
  * Handles all interactions with Meteora liquidity pools including:
  * - Pool discovery and analysis
  * - Position opening and management
@@ -54,7 +54,7 @@ export interface MeteoraConfig {
 
 /**
  * Meteora Integration Class
- * 
+ *
  * Provides comprehensive integration with Meteora liquidity pools
  * for automated trading and liquidity provision
  */
@@ -81,7 +81,7 @@ export class MeteoraIntegration {
 
       // Load active pools
       await this.loadPools();
-      
+
       console.log(`Meteora: Initialized with ${this.pools.size} pools`);
     } catch (error) {
       throw new Error(`Failed to initialize Meteora integration: ${error}`);
@@ -107,7 +107,7 @@ export class MeteoraIntegration {
           volume24h: 50000,
           apy: 15.5,
           fee: 0.003,
-          isActive: true
+          isActive: true,
         },
         {
           id: 'pool-2',
@@ -119,8 +119,8 @@ export class MeteoraIntegration {
           volume24h: 25000,
           apy: 12.8,
           fee: 0.003,
-          isActive: true
-        }
+          isActive: true,
+        },
       ];
 
       this.pools.clear();
@@ -152,7 +152,7 @@ export class MeteoraIntegration {
    * Find pools by token pair
    */
   findPools(tokenA: string, tokenB: string): MeteoraPool[] {
-    return this.getPools().filter(pool => 
+    return this.getPools().filter(pool =>
       (pool.tokenA === tokenA && pool.tokenB === tokenB) ||
       (pool.tokenA === tokenB && pool.tokenB === tokenA)
     );
@@ -208,7 +208,7 @@ export class MeteoraIntegration {
         liquidity,
         feeEarned: 0,
         createdAt: new Date(),
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       };
 
       // In a real implementation, this would:
@@ -216,7 +216,7 @@ export class MeteoraIntegration {
       // 2. Sign with wallet
       // 3. Send to network
       // 4. Wait for confirmation
-      
+
       // Mock transaction for development
       await this.simulateTransaction(wallet);
 
@@ -306,10 +306,10 @@ export class MeteoraIntegration {
     // Simple liquidity calculation based on pool ratios
     const poolRatio = pool.tokenABalance / pool.tokenBBalance;
     const inputRatio = tokenAAmount / tokenBAmount;
-    
+
     // Use the smaller ratio to determine liquidity
     const liquidity = Math.min(tokenAAmount / pool.tokenABalance, tokenBAmount / pool.tokenBBalance);
-    
+
     return liquidity * pool.tvl;
   }
 
@@ -328,7 +328,7 @@ export class MeteoraIntegration {
     return {
       signature: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       status: 'confirmed',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -350,7 +350,7 @@ export class MeteoraIntegration {
       totalPools: pools.length,
       totalTVL,
       averageAPY,
-      totalVolume24h
+      totalVolume24h,
     };
   }
 
@@ -377,13 +377,13 @@ export class MeteoraIntegration {
       return {
         connected: true,
         blockHeight,
-        latency
+        latency,
       };
     } catch (error) {
       return {
         connected: false,
         blockHeight: 0,
-        latency: 0
+        latency: 0,
       };
     }
   }
@@ -394,4 +394,4 @@ export class MeteoraIntegration {
  */
 export function createMeteoraIntegration(config: MeteoraConfig): MeteoraIntegration {
   return new MeteoraIntegration(config);
-} 
+}

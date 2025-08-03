@@ -40,22 +40,22 @@ export class SecurityAuditor {
 
     // API Key Security Audit
     await this.auditAPIKeySecurity();
-    
+
     // Transaction Security Audit
     await this.auditTransactionSecurity();
-    
+
     // Input Validation Audit
     await this.auditInputValidation();
-    
+
     // Configuration Security Audit
     await this.auditConfigurationSecurity();
-    
+
     // Dependency Security Audit
     await this.auditDependencySecurity();
 
     const result = this.generateAuditResult();
     this.auditHistory.push(result);
-    
+
     return result;
   }
 
@@ -73,7 +73,7 @@ export class SecurityAuditor {
         title: 'Hardcoded API Keys Detected',
         description: `Found ${hardcodedKeys.length} hardcoded API keys in source code`,
         location: hardcodedKeys.join(', '),
-        recommendation: 'Move all API keys to environment variables or secure key management system'
+        recommendation: 'Move all API keys to environment variables or secure key management system',
       });
     }
 
@@ -87,7 +87,7 @@ export class SecurityAuditor {
         title: 'API Keys Exposed in Logs',
         description: 'API keys may be exposed in application logs',
         location: 'Log files',
-        recommendation: 'Implement log sanitization to remove sensitive data'
+        recommendation: 'Implement log sanitization to remove sensitive data',
       });
     }
 
@@ -101,7 +101,7 @@ export class SecurityAuditor {
         title: 'Weak API Key Validation',
         description: 'API key validation may be insufficient',
         location: 'API validation logic',
-        recommendation: 'Implement stronger key validation with proper format checking'
+        recommendation: 'Implement stronger key validation with proper format checking',
       });
     }
   }
@@ -120,7 +120,7 @@ export class SecurityAuditor {
         title: 'Transaction Signing Vulnerabilities',
         description: 'Potential vulnerabilities in transaction signing process',
         location: signingVulns.join(', '),
-        recommendation: 'Implement secure transaction signing with proper validation'
+        recommendation: 'Implement secure transaction signing with proper validation',
       });
     }
 
@@ -134,7 +134,7 @@ export class SecurityAuditor {
         title: 'Replay Attack Vulnerabilities',
         description: 'Transactions may be vulnerable to replay attacks',
         location: 'Transaction processing',
-        recommendation: 'Implement nonce-based replay protection'
+        recommendation: 'Implement nonce-based replay protection',
       });
     }
 
@@ -148,7 +148,7 @@ export class SecurityAuditor {
         title: 'Double-Spend Vulnerabilities',
         description: 'Insufficient protection against double-spend attacks',
         location: 'Transaction validation',
-        recommendation: 'Implement proper double-spend detection and prevention'
+        recommendation: 'Implement proper double-spend detection and prevention',
       });
     }
   }
@@ -167,7 +167,7 @@ export class SecurityAuditor {
         title: 'SQL Injection Vulnerabilities',
         description: 'Potential SQL injection vulnerabilities detected',
         location: sqlInjection.join(', '),
-        recommendation: 'Use parameterized queries and input validation'
+        recommendation: 'Use parameterized queries and input validation',
       });
     }
 
@@ -181,7 +181,7 @@ export class SecurityAuditor {
         title: 'XSS Vulnerabilities',
         description: 'Cross-site scripting vulnerabilities detected',
         location: xssVulns.join(', '),
-        recommendation: 'Implement proper input sanitization and output encoding'
+        recommendation: 'Implement proper input sanitization and output encoding',
       });
     }
 
@@ -195,7 +195,7 @@ export class SecurityAuditor {
         title: 'Path Traversal Vulnerabilities',
         description: 'Path traversal vulnerabilities detected',
         location: pathTraversal.join(', '),
-        recommendation: 'Validate and sanitize file paths'
+        recommendation: 'Validate and sanitize file paths',
       });
     }
   }
@@ -214,7 +214,7 @@ export class SecurityAuditor {
         title: 'Insecure Default Configurations',
         description: 'Found insecure default configurations',
         location: insecureDefaults.join(', '),
-        recommendation: 'Review and secure all default configurations'
+        recommendation: 'Review and secure all default configurations',
       });
     }
 
@@ -228,7 +228,7 @@ export class SecurityAuditor {
         title: 'Debug Mode Enabled in Production',
         description: 'Debug mode is enabled in production environment',
         location: 'Application configuration',
-        recommendation: 'Disable debug mode in production'
+        recommendation: 'Disable debug mode in production',
       });
     }
 
@@ -242,7 +242,7 @@ export class SecurityAuditor {
         title: 'Weak Encryption Settings',
         description: 'Using weak encryption algorithms or settings',
         location: 'Encryption configuration',
-        recommendation: 'Use strong encryption algorithms and proper key management'
+        recommendation: 'Use strong encryption algorithms and proper key management',
       });
     }
   }
@@ -261,7 +261,7 @@ export class SecurityAuditor {
         title: 'Vulnerable Dependencies',
         description: `Found ${vulnerableDeps.length} vulnerable dependencies`,
         location: 'package.json',
-        recommendation: 'Update vulnerable dependencies to latest secure versions'
+        recommendation: 'Update vulnerable dependencies to latest secure versions',
       });
     }
 
@@ -275,7 +275,7 @@ export class SecurityAuditor {
         title: 'Outdated Dependencies',
         description: `Found ${outdatedDeps.length} outdated dependencies`,
         location: 'package.json',
-        recommendation: 'Update dependencies to latest versions'
+        recommendation: 'Update dependencies to latest versions',
       });
     }
   }
@@ -430,9 +430,9 @@ export class SecurityAuditor {
         high,
         medium,
         low,
-        score
+        score,
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -565,8 +565,8 @@ export class TransactionSecurity {
   static checkDoubleSpend(transaction: any, recentTransactions: any[]): boolean {
     // Check if this transaction conflicts with recent transactions
     if (!transaction || !recentTransactions) return false;
-    return recentTransactions.some(recent => 
-      recent.from === transaction.from && 
+    return recentTransactions.some(recent =>
+      recent.from === transaction.from &&
       recent.amount === transaction.amount &&
       Date.now() - recent.timestamp < 60000 // Within last minute
     );
@@ -574,4 +574,4 @@ export class TransactionSecurity {
 }
 
 // Global security auditor instance
-export const securityAuditor = new SecurityAuditor(); 
+export const securityAuditor = new SecurityAuditor();

@@ -1,8 +1,8 @@
 /**
  * Balanced Strategy Implementation
- * 
+ *
  * Moderate risk strategy with balanced risk-reward profile
- * 
+ *
  * @reference PRD.md#4.1 - Strategy Execution
  * @reference DTS.md#3.1 - BalancedStrategy.ts
  */
@@ -20,7 +20,7 @@ export class BalancedStrategy implements Strategy {
       stopLoss: 0.10, // 10%
       takeProfit: 0.30, // 30%
       sentimentThreshold: 0.1, // Lower threshold than aggressive
-      ...config
+      ...config,
     };
   }
 
@@ -31,11 +31,11 @@ export class BalancedStrategy implements Strategy {
   async shouldEnter(token: Token, marketData: MarketData): Promise<boolean> {
     try {
       // Entry conditions for balanced strategy (more conservative than aggressive)
-      const sentiment = token.sentiment;
+      const {sentiment} = token;
       const volume = token.volume24h;
-      const marketCap = token.marketCap;
-      const tvl = token.tvl;
-      
+      const {marketCap} = token;
+      const {tvl} = token;
+
       // More conservative criteria for balanced strategy
       const meetsSentimentCriteria = sentiment > this.config.sentimentThreshold;
       const meetsVolumeCriteria = volume >= 50000; // Higher volume requirement
@@ -74,7 +74,7 @@ export class BalancedStrategy implements Strategy {
         meetsMarketCapCriteria,
         meetsTvlCriteria,
         isTrending,
-        meetsVolatilityCriteria
+        meetsVolatilityCriteria,
       });
 
       console.log(`BalancedStrategy: Entry analysis for ${token.symbol}`, {
@@ -85,7 +85,7 @@ export class BalancedStrategy implements Strategy {
         volatility,
         hasStablePrice,
         hasConsistentVolume,
-        shouldEnter
+        shouldEnter,
       });
 
       return shouldEnter;
@@ -103,26 +103,26 @@ export class BalancedStrategy implements Strategy {
     try {
       // Base position size from config
       const baseSize = portfolioValue * this.config.maxPositionSize;
-      
+
       // Balanced sentiment multiplier (more conservative than aggressive)
       const sentimentMultiplier = Math.min(token.sentiment * 1.5, 1.2);
-      
+
       // Market cap multiplier (prefer mid-range caps)
       const marketCapMultiplier = Math.min(token.marketCap / 2000000, 0.8);
-      
+
       // Volume multiplier (moderate volume preference)
       const volumeMultiplier = Math.min(token.volume24h / 200000, 1.0);
-      
+
       // Stability multiplier (prefer stable tokens)
       const stabilityMultiplier = this.calculateStabilityMultiplier(token);
-      
+
       // Calculate final position size
       const positionSize = baseSize * sentimentMultiplier * marketCapMultiplier * volumeMultiplier * stabilityMultiplier;
-      
+
       // Ensure position size doesn't exceed maximum
       const maxPositionSize = portfolioValue * this.config.maxPositionSize;
       const finalPositionSize = Math.min(positionSize, maxPositionSize);
-      
+
       // Minimum position size check
       const minPositionSize = 25; // $25 minimum for balanced strategy
       if (finalPositionSize < minPositionSize) {
@@ -137,7 +137,7 @@ export class BalancedStrategy implements Strategy {
         stabilityMultiplier,
         positionSize,
         finalPositionSize,
-        minPositionSize
+        minPositionSize,
       });
 
       return finalPositionSize;
@@ -153,20 +153,20 @@ export class BalancedStrategy implements Strategy {
    */
   async shouldExit(position: Position, currentData: MarketData): Promise<boolean> {
     try {
-      const pnl = position.pnl;
+      const {pnl} = position;
       const pnlPercentage = pnl / position.size;
-      const sentiment = currentData.token.sentiment;
-      
+      const {sentiment} = currentData.token;
+
       // Exit conditions for balanced strategy (more conservative)
       const stopLossTriggered = pnlPercentage <= -this.config.stopLoss;
       const takeProfitTriggered = pnlPercentage >= this.config.takeProfit;
       const negativeSentimentSpike = sentiment < -0.3; // More conservative sentiment exit
-      
+
       // Additional exit conditions for balanced strategy
       const volumeDrop = currentData.token.volume24h < position.entryPrice * 2000; // Volume dropped
       const marketCapDrop = currentData.token.marketCap < position.entryPrice * 100000; // Market cap dropped
       const volatilitySpike = this.calculateVolatility(currentData.priceHistory) > 0.5; // High volatility
-      
+
       const shouldExit = stopLossTriggered ||
                         takeProfitTriggered ||
                         negativeSentimentSpike ||
@@ -183,7 +183,7 @@ export class BalancedStrategy implements Strategy {
         volumeDrop,
         marketCapDrop,
         volatilitySpike,
-        shouldExit
+        shouldExit,
       });
 
       return shouldExit;
@@ -201,25 +201,25 @@ export class BalancedStrategy implements Strategy {
     try {
       // Balanced strategy uses moderate price ranges
       const volatility = this.calculateVolatility(token.priceHistory || []);
-      
+
       // Base range percentage (moderate for balanced strategy)
       const baseRangePercentage = 0.10; // 10% base range
-      
+
       // Adjust range based on volatility (more conservative than aggressive)
       const volatilityMultiplier = Math.min(volatility * 1.5, 1.5);
       const rangePercentage = baseRangePercentage * volatilityMultiplier;
-      
+
       // Calculate min and max prices
       const range = rangePercentage / 2;
       const minPrice = currentPrice * (1 - range);
       const maxPrice = currentPrice * (1 + range);
-      
+
       console.log(`BalancedStrategy: Price range calculation for ${token.symbol}`, {
         currentPrice,
         volatility,
         rangePercentage,
         minPrice,
-        maxPrice
+        maxPrice,
       });
 
       return [minPrice, maxPrice];
@@ -229,7 +229,7 @@ export class BalancedStrategy implements Strategy {
       const defaultRange = 0.08; // 8% default range
       return [
         currentPrice * (1 - defaultRange / 2),
-        currentPrice * (1 + defaultRange / 2)
+        currentPrice * (1 + defaultRange / 2),
       ];
     }
   }
@@ -254,7 +254,7 @@ export class BalancedStrategy implements Strategy {
 
       // Calculate average volatility
       const avgVolatility = priceChanges.reduce((sum, change) => sum + change, 0) / priceChanges.length;
-      
+
       return Math.min(avgVolatility, 0.5); // Cap at 50% for balanced strategy
     } catch (error) {
       console.error('BalancedStrategy: Error calculating volatility', error);
@@ -363,4 +363,4 @@ export class BalancedStrategy implements Strategy {
   getStrategyDescription(): string {
     return 'Moderate risk strategy with balanced risk-reward profile for stable meme coins';
   }
-} 
+}

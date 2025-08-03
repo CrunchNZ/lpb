@@ -104,22 +104,22 @@ const calculateSummary = (metrics: PerformanceMetrics[]) => {
   const pnls = metrics.map(m => m.totalPnl);
   const apys = metrics.map(m => m.totalApy);
 
-  const totalReturn = values.length > 1 
-    ? ((values[values.length - 1] - values[0]) / values[0]) * 100 
+  const totalReturn = values.length > 1
+    ? ((values[values.length - 1] - values[0]) / values[0]) * 100
     : 0;
-  
+
   const averageApy = apys.reduce((sum, apy) => sum + apy, 0) / apys.length;
   const maxDrawdown = Math.min(...pnls);
-  
+
   // Calculate volatility (standard deviation of APY)
   const meanApy = averageApy;
   const variance = apys.reduce((sum, apy) => sum + Math.pow(apy - meanApy, 2), 0) / apys.length;
   const volatility = Math.sqrt(variance);
-  
+
   // Calculate Sharpe ratio (simplified)
   const riskFreeRate = 0.02; // 2% annual
   const sharpeRatio = volatility > 0 ? (averageApy - riskFreeRate) / volatility : 0;
-  
+
   // Calculate win rate
   const winningPositions = pnls.filter(pnl => pnl > 0).length;
   const winRate = pnls.length > 0 ? (winningPositions / pnls.length) * 100 : 0;
@@ -162,4 +162,4 @@ export const {
   updateStrategyBreakdown,
 } = performanceSlice.actions;
 
-export default performanceSlice.reducer; 
+export default performanceSlice.reducer;

@@ -1,8 +1,8 @@
 /**
  * Bot Orchestrator
- * 
+ *
  * Manages the main bot polling loop and prioritizes watchlisted tokens
- * 
+ *
  * @reference PRD.md#4.2 - Bot Orchestration
  * @reference DTS.md#3.2 - Bot Orchestrator
  */
@@ -53,7 +53,7 @@ export class BotOrchestrator {
       isRunning: false,
       lastPoll: 0,
       activePositions: 0,
-      totalValue: 0
+      totalValue: 0,
     };
   }
 
@@ -131,15 +131,15 @@ export class BotOrchestrator {
       const trendingTokens = await this.dexscreenerAPI.getTrendingTokens({
         chainId: 'solana',
         minVolume: 1000000, // $1M minimum
-        minMarketCap: 150000 // $150K minimum
+        minMarketCap: 150000, // $150K minimum
       });
 
       // Filter out tokens we already have positions in
       const activePositions = await this.databaseManager.getActivePositions();
       const existingTokens = new Set(activePositions.map(p => p.tokenA));
 
-      const availableTokens = trendingTokens.filter(token => 
-        !existingTokens.has(token.symbol) && 
+      const availableTokens = trendingTokens.filter(token =>
+        !existingTokens.has(token.symbol) &&
         activePositions.length < this.config.maxPositions
       );
 
@@ -172,7 +172,7 @@ export class BotOrchestrator {
 
       for (const watchlist of watchlists) {
         const watchlistTokens = await this.databaseManager.getWatchlistTokens(watchlist.id);
-        
+
         for (const watchlistToken of watchlistTokens) {
           // Skip if we already have a position
           if (existingTokens.has(watchlistToken.tokenSymbol)) {
@@ -209,7 +209,7 @@ export class BotOrchestrator {
         marketCap: token.marketCap,
         priceChange24h: token.priceChange24h,
         liquidity: token.liquidity,
-        age: token.age
+        age: token.age,
       };
 
       // Execute strategy analysis
@@ -217,7 +217,7 @@ export class BotOrchestrator {
         {
           symbol: token.symbol,
           name: token.name,
-          address: token.pairAddress
+          address: token.pairAddress,
         },
         marketData
       );
@@ -265,7 +265,7 @@ export class BotOrchestrator {
         timestamp: Date.now(),
         status: 'active' as const,
         pnl: 0,
-        apy: 0
+        apy: 0,
       };
 
       // Save to database
@@ -274,7 +274,7 @@ export class BotOrchestrator {
       console.log(`BotOrchestrator: Position opened for ${token.symbol}`, {
         size: positionSize,
         confidence: decision.confidence,
-        reasoning: decision.reasoning
+        reasoning: decision.reasoning,
       });
 
     } catch (error) {
@@ -303,4 +303,4 @@ export class BotOrchestrator {
   isBotRunning(): boolean {
     return this.isRunning;
   }
-} 
+}

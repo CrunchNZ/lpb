@@ -47,7 +47,7 @@ export class PerformanceMonitor {
           duration,
           timestamp,
           success: true,
-          metadata
+          metadata,
         });
 
         // Log slow operations
@@ -65,7 +65,7 @@ export class PerformanceMonitor {
           timestamp,
           success: false,
           error: error.message,
-          metadata
+          metadata,
         });
 
         // Log error operations
@@ -91,13 +91,13 @@ export class PerformanceMonitor {
     try {
       const result = fn();
       const duration = performance.now() - startTime;
-      
+
       this.recordMetric({
         operation,
         duration,
         timestamp,
         success: true,
-        metadata
+        metadata,
       });
 
       if (duration > this.slowQueryThreshold) {
@@ -113,7 +113,7 @@ export class PerformanceMonitor {
         timestamp,
         success: false,
         error: error instanceof Error ? error.message : String(error),
-        metadata
+        metadata,
       });
 
       throw error;
@@ -136,7 +136,7 @@ export class PerformanceMonitor {
    * Get performance statistics for an operation
    */
   getStats(operation?: string): PerformanceStats[] {
-    const filteredMetrics = operation 
+    const filteredMetrics = operation
       ? this.metrics.filter(m => m.operation === operation)
       : this.metrics;
 
@@ -146,7 +146,7 @@ export class PerformanceMonitor {
     for (const [op, metrics] of grouped.entries()) {
       const durations = metrics.map(m => m.duration);
       const successful = metrics.filter(m => m.success);
-      
+
       stats.push({
         operation: op,
         count: metrics.length,
@@ -154,7 +154,7 @@ export class PerformanceMonitor {
         minDuration: Math.min(...durations),
         maxDuration: Math.max(...durations),
         successRate: successful.length / metrics.length,
-        lastExecuted: Math.max(...metrics.map(m => m.timestamp))
+        lastExecuted: Math.max(...metrics.map(m => m.timestamp)),
       });
     }
 
@@ -165,7 +165,7 @@ export class PerformanceMonitor {
    * Get metrics for a specific operation
    */
   getMetrics(operation?: string): PerformanceMetric[] {
-    return operation 
+    return operation
       ? this.metrics.filter(m => m.operation === operation)
       : this.metrics;
   }
@@ -205,7 +205,7 @@ export class PerformanceMonitor {
    */
   private groupByOperation(metrics: PerformanceMetric[]): Map<string, PerformanceMetric[]> {
     const grouped = new Map<string, PerformanceMetric[]>();
-    
+
     for (const metric of metrics) {
       const existing = grouped.get(metric.operation) || [];
       existing.push(metric);
@@ -231,7 +231,7 @@ export class PerformanceMonitor {
         avgDuration: 0,
         successRate: 0,
         slowOperations: 0,
-        failedOperations: 0
+        failedOperations: 0,
       };
     }
 
@@ -245,7 +245,7 @@ export class PerformanceMonitor {
       avgDuration: durations.reduce((a, b) => a + b, 0) / durations.length,
       successRate: successful.length / this.metrics.length,
       slowOperations: slow.length,
-      failedOperations: failed.length
+      failedOperations: failed.length,
     };
   }
 }
@@ -278,7 +278,7 @@ export class DatabasePerformanceMonitor extends PerformanceMonitor {
           duration: 0,
           timestamp: Date.now(),
           success: true,
-          metadata: { query, params, cached: true }
+          metadata: { query, params, cached: true },
         });
         return cached.result;
       }
@@ -287,13 +287,13 @@ export class DatabasePerformanceMonitor extends PerformanceMonitor {
     const result = await this.track(`DB_QUERY:${query}`, queryFn, {
       query,
       params,
-      cached: false
+      cached: false,
     });
 
     if (useCache) {
       this.queryCache.set(cacheKey, {
         result,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
@@ -333,7 +333,7 @@ export class DatabasePerformanceMonitor extends PerformanceMonitor {
         totalQueries: 0,
         cachedQueries: 0,
         avgQueryTime: 0,
-        slowQueries: 0
+        slowQueries: 0,
       };
     }
 
@@ -344,7 +344,7 @@ export class DatabasePerformanceMonitor extends PerformanceMonitor {
       totalQueries: dbMetrics.length,
       cachedQueries: cachedMetrics.length,
       avgQueryTime: queryTimes.length > 0 ? queryTimes.reduce((a, b) => a + b, 0) / queryTimes.length : 0,
-      slowQueries: slowQueries.length
+      slowQueries: slowQueries.length,
     };
   }
 }
@@ -371,7 +371,7 @@ export class APIPerformanceMonitor extends PerformanceMonitor {
 
     const result = await this.track(`API_CALL:${endpoint}`, apiCall);
     this.incrementAPICallCount(endpoint);
-    
+
     return result;
   }
 
@@ -397,7 +397,7 @@ export class APIPerformanceMonitor extends PerformanceMonitor {
   private incrementAPICallCount(endpoint: string): void {
     const now = Date.now();
     const tracker = this.rateLimitTracker.get(endpoint) || { count: 0, resetTime: now + 60000 };
-    
+
     tracker.count++;
     this.rateLimitTracker.set(endpoint, tracker);
   }
@@ -420,7 +420,7 @@ export class APIPerformanceMonitor extends PerformanceMonitor {
         totalCalls: 0,
         avgResponseTime: 0,
         failedCalls: 0,
-        rateLimitedCalls: 0
+        rateLimitedCalls: 0,
       };
     }
 
@@ -430,7 +430,7 @@ export class APIPerformanceMonitor extends PerformanceMonitor {
       totalCalls: apiMetrics.length,
       avgResponseTime: responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length,
       failedCalls: failedCalls.length,
-      rateLimitedCalls: rateLimitedCalls.length
+      rateLimitedCalls: rateLimitedCalls.length,
     };
   }
 }
@@ -438,4 +438,4 @@ export class APIPerformanceMonitor extends PerformanceMonitor {
 // Global performance monitor instances
 export const dbPerformanceMonitor = new DatabasePerformanceMonitor();
 export const apiPerformanceMonitor = new APIPerformanceMonitor();
-export const globalPerformanceMonitor = new PerformanceMonitor(); 
+export const globalPerformanceMonitor = new PerformanceMonitor();

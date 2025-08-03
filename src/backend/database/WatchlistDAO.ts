@@ -35,7 +35,7 @@ export class WatchlistDAO {
           id: this.lastID,
           name,
           createdAt: now,
-          updatedAt: now
+          updatedAt: now,
         });
       });
     });
@@ -152,7 +152,7 @@ export class WatchlistDAO {
           tokenName,
           pairAddress,
           chainId,
-          addedAt: now
+          addedAt: now,
         });
       });
     });
@@ -316,4 +316,4 @@ export class WatchlistDAO {
       });
     });
   }
-} 
+}

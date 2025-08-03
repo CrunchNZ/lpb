@@ -25,9 +25,9 @@ export class CacheManager<T = any> {
       maxSize: 1000,
       defaultTTL: 5 * 60 * 1000, // 5 minutes
       cleanupInterval: 60 * 1000, // 1 minute
-      ...config
+      ...config,
     };
-    
+
     this.cache = new Map();
     this.startCleanupTimer();
   }
@@ -37,7 +37,7 @@ export class CacheManager<T = any> {
    */
   get(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
@@ -51,7 +51,7 @@ export class CacheManager<T = any> {
     // Move to end (LRU behavior)
     this.cache.delete(key);
     this.cache.set(key, entry);
-    
+
     return entry.value;
   }
 
@@ -68,7 +68,7 @@ export class CacheManager<T = any> {
     this.cache.set(key, {
       value,
       timestamp: Date.now(),
-      ttl: ttl || this.config.defaultTTL
+      ttl: ttl || this.config.defaultTTL,
     });
   }
 
@@ -99,7 +99,7 @@ export class CacheManager<T = any> {
       size: this.cache.size,
       maxSize: this.config.maxSize,
       hitRate: 0, // TODO: Implement hit rate tracking
-      missRate: 0 // TODO: Implement miss rate tracking
+      missRate: 0, // TODO: Implement miss rate tracking
     };
   }
 
@@ -150,7 +150,7 @@ export class DatabaseCache {
     this.cache = new CacheManager({
       maxSize: 500,
       defaultTTL: 2 * 60 * 1000, // 2 minutes for database queries
-      cleanupInterval: 30 * 1000 // 30 seconds
+      cleanupInterval: 30 * 1000, // 30 seconds
     });
     this.queryStats = new Map();
   }
@@ -220,18 +220,18 @@ export class DatabaseCache {
     queryStats: Record<string, { hits: number; misses: number; hitRate: number }>;
   } {
     const queryStats: Record<string, { hits: number; misses: number; hitRate: number }> = {};
-    
+
     for (const [method, stats] of this.queryStats.entries()) {
       const total = stats.hits + stats.misses;
       queryStats[method] = {
         ...stats,
-        hitRate: total > 0 ? stats.hits / total : 0
+        hitRate: total > 0 ? stats.hits / total : 0,
       };
     }
 
     return {
       cacheStats: this.cache.getStats(),
-      queryStats
+      queryStats,
     };
   }
 
@@ -255,7 +255,7 @@ export class APICache {
     this.cache = new CacheManager({
       maxSize: 200,
       defaultTTL: 30 * 1000, // 30 seconds for API responses
-      cleanupInterval: 10 * 1000 // 10 seconds
+      cleanupInterval: 10 * 1000, // 10 seconds
     });
     this.rateLimitTracker = new Map();
   }
@@ -284,7 +284,7 @@ export class APICache {
     const result = await apiCall();
     this.cache.set(key, result, ttl);
     this.trackAPICall(endpoint);
-    
+
     return result;
   }
 
@@ -310,7 +310,7 @@ export class APICache {
   private trackAPICall(endpoint: string): void {
     const now = Date.now();
     const tracker = this.rateLimitTracker.get(endpoint) || { count: 0, resetTime: now + 60000 };
-    
+
     tracker.count++;
     this.rateLimitTracker.set(endpoint, tracker);
   }
@@ -329,4 +329,4 @@ export class APICache {
   getStats(): ReturnType<CacheManager['getStats']> {
     return this.cache.getStats();
   }
-} 
+}

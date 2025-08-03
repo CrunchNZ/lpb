@@ -66,18 +66,18 @@ class DexscreenerAPI {
     try {
       const url = this.buildSearchUrl(query, filters);
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error(`Dexscreener API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       const tokens = this.processSearchResults(data.pairs || [], filters);
-      
+
       const result: SearchResult = {
         tokens,
         totalCount: tokens.length,
-        hasMore: tokens.length >= 30 // API limit
+        hasMore: tokens.length >= 30, // API limit
       };
 
       this.cacheResult(cacheKey, result);
@@ -103,18 +103,18 @@ class DexscreenerAPI {
     try {
       const url = `${this.baseUrl}/pairs/${chainId}/${pairAddress}`;
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error(`Dexscreener API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       const token = this.processTokenData(data.pair);
-      
+
       if (token) {
         this.cacheResult(cacheKey, token);
       }
-      
+
       return token;
     } catch (error) {
       console.error('Dexscreener token details error:', error);
@@ -127,7 +127,7 @@ class DexscreenerAPI {
    */
   async getTrendingTokens(filters: SearchFilters | string = {}): Promise<TokenData[]> {
     // Handle string parameter for backward compatibility
-    const searchFilters: SearchFilters = typeof filters === 'string' 
+    const searchFilters: SearchFilters = typeof filters === 'string'
       ? { trending: filters as 'gainers' | 'losers' | 'new' }
       : filters;
 
@@ -158,7 +158,7 @@ class DexscreenerAPI {
           transactions24h: 15000,
           pairAddress: '0x1234567890abcdef',
           chainId: 'solana',
-          dexId: 'raydium'
+          dexId: 'raydium',
         },
         {
           symbol: 'BONK',
@@ -175,7 +175,7 @@ class DexscreenerAPI {
           transactions24h: 850,
           pairAddress: '0xabcdef1234567890',
           chainId: 'solana',
-          dexId: 'raydium'
+          dexId: 'raydium',
         },
         {
           symbol: 'RAY',
@@ -192,8 +192,8 @@ class DexscreenerAPI {
           transactions24h: 1200,
           pairAddress: '0xraydium123456',
           chainId: 'solana',
-          dexId: 'raydium'
-        }
+          dexId: 'raydium',
+        },
       ];
 
       // Apply filters
@@ -270,7 +270,7 @@ class DexscreenerAPI {
           transactions24h: 15000,
           pairAddress: '0x1234567890abcdef',
           chainId: 'solana',
-          dexId: 'raydium'
+          dexId: 'raydium',
         },
         'BONK': {
           symbol: 'BONK',
@@ -287,7 +287,7 @@ class DexscreenerAPI {
           transactions24h: 850,
           pairAddress: '0xabcdef1234567890',
           chainId: 'solana',
-          dexId: 'raydium'
+          dexId: 'raydium',
         },
         'RAY': {
           symbol: 'RAY',
@@ -304,7 +304,7 @@ class DexscreenerAPI {
           transactions24h: 1200,
           pairAddress: '0xraydium123456',
           chainId: 'solana',
-          dexId: 'raydium'
+          dexId: 'raydium',
         },
         'JUP': {
           symbol: 'JUP',
@@ -321,8 +321,8 @@ class DexscreenerAPI {
           transactions24h: 950,
           pairAddress: '0xjupiter123456',
           chainId: 'solana',
-          dexId: 'raydium'
-        }
+          dexId: 'raydium',
+        },
       };
 
       const tokenData = mockTokenData[symbol.toUpperCase()];
@@ -344,11 +344,11 @@ class DexscreenerAPI {
   private async rateLimit(): Promise<void> {
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
-    
+
     if (timeSinceLastRequest < this.rateLimitDelay) {
       await new Promise(resolve => setTimeout(resolve, this.rateLimitDelay - timeSinceLastRequest));
     }
-    
+
     this.lastRequestTime = Date.now();
   }
 
@@ -358,7 +358,7 @@ class DexscreenerAPI {
   private buildSearchUrl(query: string, filters: SearchFilters): string {
     const params = new URLSearchParams();
     params.append('q', query);
-    
+
     if (filters.chainId) {
       params.append('chainId', filters.chainId);
     }
@@ -403,7 +403,7 @@ class DexscreenerAPI {
       transactions24h: parseInt(pair.txns?.h24 || '0') || 0,
       pairAddress: pair.pairAddress || '',
       chainId: pair.chainId || 'solana',
-      dexId: pair.dexId || 'unknown'
+      dexId: pair.dexId || 'unknown',
     };
   }
 
@@ -472,7 +472,7 @@ class DexscreenerAPI {
   private cacheResult<T>(key: string, data: T): void {
     this.cache.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -489,7 +489,7 @@ class DexscreenerAPI {
   getCacheStats(): { size: number; keys: string[] } {
     return {
       size: this.cache.size,
-      keys: Array.from(this.cache.keys())
+      keys: Array.from(this.cache.keys()),
     };
   }
 }
@@ -507,4 +507,4 @@ export function getDexScreenerAPI(db?: DatabaseManager): DexscreenerAPI {
   return dexScreenerInstance;
 }
 
-export { DexscreenerAPI }; 
+export { DexscreenerAPI };

@@ -1,6 +1,6 @@
 /**
  * Wallet Connection Utilities
- * 
+ *
  * Handles all wallet-related operations including:
  * - Wallet connection and keypair management
  * - Transaction signing and verification
@@ -9,22 +9,22 @@
  * - Security and encryption utilities
  */
 
-import { 
-  Connection, 
-  PublicKey, 
-  Keypair, 
-  Transaction, 
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  Transaction,
   TransactionInstruction,
   SystemProgram,
   LAMPORTS_PER_SOL,
-  sendAndConfirmTransaction
+  sendAndConfirmTransaction,
 } from '@solana/web3.js';
-import { 
+import {
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
   getAccount,
-  AccountLayout
+  AccountLayout,
 } from '@solana/spl-token';
 import * as bs58 from 'bs58';
 import * as crypto from 'crypto';
@@ -69,7 +69,7 @@ export interface WalletSecurity {
 
 /**
  * Wallet Manager Class
- * 
+ *
  * Provides comprehensive wallet management functionality
  * for Solana blockchain interactions
  */
@@ -100,7 +100,7 @@ export class WalletManager {
         isConnected: false,
         balance: 0,
         tokenAccounts: [],
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       };
 
       console.log('Wallet: Initialized wallet manager');
@@ -115,7 +115,7 @@ export class WalletManager {
   generateKeypair(): Keypair {
     try {
       this.keypair = Keypair.generate();
-      
+
       if (this.state) {
         this.state.publicKey = this.keypair.publicKey.toString();
         this.state.isConnected = true;
@@ -137,7 +137,7 @@ export class WalletManager {
       // Decode private key (base58 format)
       const decoded = bs58.decode(privateKey);
       this.keypair = Keypair.fromSecretKey(decoded);
-      
+
       if (this.state) {
         this.state.publicKey = this.keypair.publicKey.toString();
         this.state.isConnected = true;
@@ -197,7 +197,7 @@ export class WalletManager {
       }
 
       const balance = await this.connection.getBalance(this.keypair.publicKey);
-      
+
       if (this.state) {
         this.state.balance = balance / LAMPORTS_PER_SOL;
         this.state.lastUpdated = new Date();
@@ -231,13 +231,13 @@ export class WalletManager {
           const accountInfo = AccountLayout.decode(account.account.data);
           const mint = new PublicKey(accountInfo.mint).toString();
           const balance = Number(accountInfo.amount);
-          const decimals = accountInfo.decimals;
+          const {decimals} = accountInfo;
 
           accounts.push({
             mint,
             address: account.pubkey.toString(),
             balance,
-            decimals
+            decimals,
           });
         } catch (error) {
           console.warn(`Failed to decode token account: ${error}`);
@@ -336,8 +336,8 @@ export class WalletManager {
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: this.keypair.publicKey,
-          toPubkey: toPubkey,
-          lamports
+          toPubkey,
+          lamports,
         })
       );
 
@@ -351,7 +351,7 @@ export class WalletManager {
         signature,
         status: 'confirmed',
         timestamp: new Date(),
-        instructions: transaction.instructions
+        instructions: transaction.instructions,
       };
 
       console.log(`Wallet: Sent ${amount} SOL to ${toAddress}`);
@@ -402,7 +402,7 @@ export class WalletManager {
         signature,
         status: 'confirmed',
         timestamp: new Date(),
-        instructions: transaction.instructions
+        instructions: transaction.instructions,
       };
 
       console.log(`Wallet: Transaction confirmed ${signature}`);
@@ -424,7 +424,7 @@ export class WalletManager {
       const salt = crypto.randomBytes(32);
       const iterations = 100000;
       const key = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256');
-      
+
       const privateKey = this.exportKeypair();
       if (!privateKey) {
         throw new Error('Failed to export private key');
@@ -435,7 +435,7 @@ export class WalletManager {
       this.security = {
         encrypted: true,
         salt: salt.toString('hex'),
-        iterations
+        iterations,
       };
 
       console.log('Wallet: Wallet encrypted successfully');
@@ -488,7 +488,7 @@ export class WalletManager {
 
       await this.getBalance();
       await this.getTokenAccounts();
-      
+
       console.log('Wallet: State refreshed');
     } catch (error) {
       console.error(`Failed to refresh wallet state: ${error}`);
@@ -508,7 +508,7 @@ export class WalletManager {
       isConnected: this.isConnected(),
       balance: this.state?.balance || 0,
       tokenAccounts: this.state?.tokenAccounts.length || 0,
-      lastUpdated: this.state?.lastUpdated || null
+      lastUpdated: this.state?.lastUpdated || null,
     };
   }
 
@@ -528,13 +528,13 @@ export class WalletManager {
       return {
         connected: true,
         blockHeight,
-        latency
+        latency,
       };
     } catch (error) {
       return {
         connected: false,
         blockHeight: 0,
-        latency: 0
+        latency: 0,
       };
     }
   }
@@ -545,4 +545,4 @@ export class WalletManager {
  */
 export function createWalletManager(config: WalletConfig): WalletManager {
   return new WalletManager(config);
-} 
+}

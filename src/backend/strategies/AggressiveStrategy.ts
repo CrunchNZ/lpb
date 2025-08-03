@@ -1,8 +1,8 @@
 /**
  * Aggressive Strategy Implementation
- * 
+ *
  * High-risk, high-reward strategy for volatile meme coins
- * 
+ *
  * @reference PRD.md#4.1 - Strategy Execution
  * @reference DTS.md#3.1 - AggressiveStrategy.ts
  */
@@ -20,7 +20,7 @@ export class AggressiveStrategy implements Strategy {
       stopLoss: 0.15, // 15%
       takeProfit: 0.50, // 50%
       sentimentThreshold: 0.3, // Positive sentiment required
-      ...config
+      ...config,
     };
   }
 
@@ -31,11 +31,11 @@ export class AggressiveStrategy implements Strategy {
   async shouldEnter(token: Token, marketData: MarketData): Promise<boolean> {
     try {
       // Entry conditions for aggressive strategy
-      const sentiment = token.sentiment;
+      const {sentiment} = token;
       const volume = token.volume24h;
-      const marketCap = token.marketCap;
-      const tvl = token.tvl;
-      
+      const {marketCap} = token;
+      const {tvl} = token;
+
       // Check if token meets aggressive entry criteria
       const meetsSentimentCriteria = sentiment > this.config.sentimentThreshold;
       const meetsVolumeCriteria = volume >= 10000; // $10K daily volume minimum
@@ -60,7 +60,7 @@ export class AggressiveStrategy implements Strategy {
         marketCap,
         tvl,
         volatility,
-        shouldEnter
+        shouldEnter,
       });
 
       return shouldEnter;
@@ -78,23 +78,23 @@ export class AggressiveStrategy implements Strategy {
     try {
       // Base position size from config
       const baseSize = portfolioValue * this.config.maxPositionSize;
-      
+
       // Sentiment multiplier (higher sentiment = larger position)
       const sentimentMultiplier = Math.min(token.sentiment * 2, 1.5);
-      
+
       // Market cap multiplier (smaller caps get larger positions)
       const marketCapMultiplier = Math.min(token.marketCap / 1000000, 1);
-      
+
       // Volume multiplier (higher volume = larger position)
       const volumeMultiplier = Math.min(token.volume24h / 100000, 1.2);
-      
+
       // Calculate final position size
       const positionSize = baseSize * sentimentMultiplier * marketCapMultiplier * volumeMultiplier;
-      
+
       // Ensure position size doesn't exceed maximum
       const maxPositionSize = portfolioValue * this.config.maxPositionSize;
       const finalPositionSize = Math.min(positionSize, maxPositionSize);
-      
+
       // Minimum position size check
       const minPositionSize = 100; // $100 minimum
       if (finalPositionSize < minPositionSize) {
@@ -106,7 +106,7 @@ export class AggressiveStrategy implements Strategy {
         sentimentMultiplier,
         marketCapMultiplier,
         volumeMultiplier,
-        finalPositionSize
+        finalPositionSize,
       });
 
       return finalPositionSize;
@@ -122,19 +122,19 @@ export class AggressiveStrategy implements Strategy {
    */
   async shouldExit(position: Position, currentData: MarketData): Promise<boolean> {
     try {
-      const pnl = position.pnl;
+      const {pnl} = position;
       const pnlPercentage = pnl / position.size;
-      const sentiment = currentData.token.sentiment;
-      
+      const {sentiment} = currentData.token;
+
       // Exit conditions for aggressive strategy
       const stopLossTriggered = pnlPercentage <= -this.config.stopLoss;
       const takeProfitTriggered = pnlPercentage >= this.config.takeProfit;
       const negativeSentimentSpike = sentiment < -0.2; // Emergency exit on negative sentiment
-      
+
       // Additional exit conditions for aggressive strategy
       const volumeDrop = currentData.token.volume24h < position.entryPrice * 1000; // Volume dropped significantly
       const marketCapDrop = currentData.token.marketCap < position.entryPrice * 50000; // Market cap dropped
-      
+
       const shouldExit = stopLossTriggered ||
                         takeProfitTriggered ||
                         negativeSentimentSpike ||
@@ -149,7 +149,7 @@ export class AggressiveStrategy implements Strategy {
         negativeSentimentSpike,
         volumeDrop,
         marketCapDrop,
-        shouldExit
+        shouldExit,
       });
 
       return shouldExit;
@@ -167,25 +167,25 @@ export class AggressiveStrategy implements Strategy {
     try {
       // Aggressive strategy uses wider price ranges for higher volatility
       const volatility = this.calculateVolatility(token.priceHistory || []);
-      
+
       // Base range percentage (wider for aggressive strategy)
       const baseRangePercentage = 0.15; // 15% base range
-      
+
       // Adjust range based on volatility
       const volatilityMultiplier = Math.min(volatility * 2, 2.0);
       const rangePercentage = baseRangePercentage * volatilityMultiplier;
-      
+
       // Calculate min and max prices
       const range = rangePercentage / 2;
       const minPrice = currentPrice * (1 - range);
       const maxPrice = currentPrice * (1 + range);
-      
+
       console.log(`AggressiveStrategy: Price range calculation for ${token.symbol}`, {
         currentPrice,
         volatility,
         rangePercentage,
         minPrice,
-        maxPrice
+        maxPrice,
       });
 
       return [minPrice, maxPrice];
@@ -195,7 +195,7 @@ export class AggressiveStrategy implements Strategy {
       const defaultRange = 0.1; // 10% default range
       return [
         currentPrice * (1 - defaultRange / 2),
-        currentPrice * (1 + defaultRange / 2)
+        currentPrice * (1 + defaultRange / 2),
       ];
     }
   }
@@ -220,7 +220,7 @@ export class AggressiveStrategy implements Strategy {
 
       // Calculate average volatility
       const avgVolatility = priceChanges.reduce((sum, change) => sum + change, 0) / priceChanges.length;
-      
+
       return Math.min(avgVolatility, 1.0); // Cap at 100%
     } catch (error) {
       console.error('AggressiveStrategy: Error calculating volatility', error);
@@ -241,4 +241,4 @@ export class AggressiveStrategy implements Strategy {
   getStrategyDescription(): string {
     return 'High-risk, high-reward strategy for volatile meme coins with positive sentiment and adequate volume';
   }
-} 
+}

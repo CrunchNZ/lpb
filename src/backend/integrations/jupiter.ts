@@ -1,6 +1,6 @@
 /**
  * Jupiter SDK Integration
- * 
+ *
  * Handles all interactions with Jupiter aggregator including:
  * - Token swaps and route discovery
  * - Price quotes and slippage calculation
@@ -86,7 +86,7 @@ export interface JupiterConfig {
 
 /**
  * Jupiter Integration Class
- * 
+ *
  * Provides comprehensive integration with Jupiter aggregator
  * for token swaps and route optimization
  */
@@ -113,7 +113,7 @@ export class JupiterIntegration {
 
       // Load token list
       await this.loadTokens();
-      
+
       console.log(`Jupiter: Initialized with ${this.tokens.size} tokens`);
     } catch (error) {
       throw new Error(`Failed to initialize Jupiter integration: ${error}`);
@@ -134,7 +134,7 @@ export class JupiterIntegration {
           name: 'Solana',
           decimals: 9,
           logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-          tags: ['native']
+          tags: ['native'],
         },
         {
           address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
@@ -142,7 +142,7 @@ export class JupiterIntegration {
           name: 'USD Coin',
           decimals: 6,
           logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
-          tags: ['stablecoin']
+          tags: ['stablecoin'],
         },
         {
           address: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R',
@@ -150,8 +150,8 @@ export class JupiterIntegration {
           name: 'Raydium',
           decimals: 6,
           logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R/logo.png',
-          tags: ['defi']
-        }
+          tags: ['defi'],
+        },
       ];
 
       this.tokens.clear();
@@ -183,7 +183,7 @@ export class JupiterIntegration {
    * Find tokens by symbol
    */
   findTokensBySymbol(symbol: string): JupiterToken[] {
-    return this.getTokens().filter(token => 
+    return this.getTokens().filter(token =>
       token.symbol.toLowerCase().includes(symbol.toLowerCase())
     );
   }
@@ -219,7 +219,7 @@ export class JupiterIntegration {
         priceImpactPct: this.calculatePriceImpact(amount),
         routePlan: this.generateMockRoute(inputMint, outputMint, amount),
         contextSlot: await this.connection.getSlot(),
-        timeTaken: Math.random() * 100
+        timeTaken: Math.random() * 100,
       };
 
       // Cache the quote
@@ -261,7 +261,7 @@ export class JupiterIntegration {
         timestamp: transaction.timestamp,
         inputAmount: quote.inAmount,
         outputAmount: quote.outAmount,
-        priceImpact: quote.priceImpactPct
+        priceImpact: quote.priceImpactPct,
       };
 
       console.log(`Jupiter: Executed swap ${result.signature}`);
@@ -282,7 +282,7 @@ export class JupiterIntegration {
   ): Promise<JupiterRoute[]> {
     try {
       const quote = await this.getQuote(inputMint, outputMint, amount, slippageBps);
-      
+
       // In a real implementation, this would return multiple route options
       // For now, we'll return the single route from the quote
       return quote.routePlan;
@@ -338,12 +338,12 @@ export class JupiterIntegration {
     const priceMap: Record<string, number> = {
       'SOL': 100, // SOL = $100
       'USDC': 1,  // USDC = $1
-      'RAY': 0.5  // RAY = $0.5
+      'RAY': 0.5,  // RAY = $0.5
     };
 
     const inputPrice = priceMap[inputToken.symbol] || 1;
     const outputPrice = priceMap[outputToken.symbol] || 1;
-    
+
     return (inputAmount * inputPrice) / outputPrice;
   }
 
@@ -370,14 +370,14 @@ export class JupiterIntegration {
       inputMint,
       outputMint,
       notEnoughLiquidity: false,
-      price: 1.0
+      price: 1.0,
     };
 
     return [{
       id: `route-${Date.now()}`,
       inAmount: amount,
-      outAmount: this.calculateOutputAmount(amount, 
-        this.getToken(inputMint)!, 
+      outAmount: this.calculateOutputAmount(amount,
+        this.getToken(inputMint)!,
         this.getToken(outputMint)!
       ),
       priceImpact: this.calculatePriceImpact(amount),
@@ -385,7 +385,7 @@ export class JupiterIntegration {
       swapMode: 'ExactIn',
       slippageBps: 50,
       otherAmountThreshold: 0,
-      swapTransaction: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      swapTransaction: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     }];
   }
 
@@ -407,7 +407,7 @@ export class JupiterIntegration {
       timestamp: new Date(),
       inputAmount: 0,
       outputAmount: 0,
-      priceImpact: 0
+      priceImpact: 0,
     };
   }
 
@@ -420,14 +420,14 @@ export class JupiterIntegration {
     averagePriceImpact: number;
   } {
     const quotes = this.getRecentQuotes();
-    const averagePriceImpact = quotes.length > 0 
+    const averagePriceImpact = quotes.length > 0
       ? quotes.reduce((sum, quote) => sum + quote.priceImpactPct, 0) / quotes.length
       : 0;
 
     return {
       totalTokens: this.tokens.size,
       totalQuotes: quotes.length,
-      averagePriceImpact
+      averagePriceImpact,
     };
   }
 
@@ -454,13 +454,13 @@ export class JupiterIntegration {
       return {
         connected: true,
         blockHeight,
-        latency
+        latency,
       };
     } catch (error) {
       return {
         connected: false,
         blockHeight: 0,
-        latency: 0
+        latency: 0,
       };
     }
   }
@@ -471,4 +471,4 @@ export class JupiterIntegration {
  */
 export function createJupiterIntegration(config: JupiterConfig): JupiterIntegration {
   return new JupiterIntegration(config);
-} 
+}

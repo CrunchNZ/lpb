@@ -2,4 +2,4 @@ export { DatabaseSchema, Position, PerformanceMetrics, BotConfig } from './schem
 export { PositionDAO } from './PositionDAO';
 export { PerformanceDAO, StrategyBreakdown } from './PerformanceDAO';
 export { ConfigDAO } from './ConfigDAO';
-export { DatabaseManager } from './DatabaseManager'; 
+export { DatabaseManager } from './DatabaseManager';

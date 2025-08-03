@@ -1,8 +1,8 @@
 /**
  * Strategy Factory Implementation
- * 
+ *
  * Creates and manages strategy instances
- * 
+ *
  * @reference PRD.md#4.1 - Strategy Execution
  * @reference DTS.md#3.1 - Strategy Factory
  */
@@ -38,13 +38,13 @@ export class StrategyFactory implements IStrategyFactory {
       switch (type) {
         case StrategyType.AGGRESSIVE:
           return new AggressiveStrategy(config);
-        
+
         case StrategyType.BALANCED:
           return new BalancedStrategy(config);
-        
+
         case StrategyType.CONSERVATIVE:
           return new ConservativeStrategy(config);
-        
+
         default:
           throw new Error(`Unknown strategy type: ${type}`);
       }
@@ -63,7 +63,7 @@ export class StrategyFactory implements IStrategyFactory {
     return [
       StrategyType.AGGRESSIVE,
       StrategyType.BALANCED,
-      StrategyType.CONSERVATIVE
+      StrategyType.CONSERVATIVE,
     ];
   }
 
@@ -81,9 +81,9 @@ export class StrategyFactory implements IStrategyFactory {
           maxPositionSize: 0.05,
           stopLoss: 0.15,
           takeProfit: 0.50,
-          sentimentThreshold: 0.3
+          sentimentThreshold: 0.3,
         };
-      
+
       case StrategyType.BALANCED:
         return {
           type: StrategyType.BALANCED,
@@ -91,9 +91,9 @@ export class StrategyFactory implements IStrategyFactory {
           maxPositionSize: 0.03,
           stopLoss: 0.10,
           takeProfit: 0.30,
-          sentimentThreshold: 0.1
+          sentimentThreshold: 0.1,
         };
-      
+
       case StrategyType.CONSERVATIVE:
         return {
           type: StrategyType.CONSERVATIVE,
@@ -101,9 +101,9 @@ export class StrategyFactory implements IStrategyFactory {
           maxPositionSize: 0.02,
           stopLoss: 0.08,
           takeProfit: 0.25,
-          sentimentThreshold: 0.2
+          sentimentThreshold: 0.2,
         };
-      
+
       default:
         throw new Error(`Unknown strategy type: ${type}`);
     }
@@ -155,13 +155,13 @@ export class StrategyFactory implements IStrategyFactory {
     switch (type) {
       case StrategyType.AGGRESSIVE:
         return 'High-risk, high-reward strategy for volatile meme coins with positive sentiment and adequate volume';
-      
+
       case StrategyType.BALANCED:
         return 'Moderate risk strategy with balanced risk-reward profile for stable meme coins';
-      
+
       case StrategyType.CONSERVATIVE:
         return 'Low-risk strategy with capital preservation focus for established meme coins';
-      
+
       default:
         return 'Unknown strategy type';
     }
@@ -176,13 +176,13 @@ export class StrategyFactory implements IStrategyFactory {
     switch (type) {
       case StrategyType.AGGRESSIVE:
         return 8;
-      
+
       case StrategyType.BALANCED:
         return 5;
-      
+
       case StrategyType.CONSERVATIVE:
         return 2;
-      
+
       default:
         return 5; // Default to balanced
     }
@@ -197,15 +197,15 @@ export class StrategyFactory implements IStrategyFactory {
     switch (type) {
       case StrategyType.AGGRESSIVE:
         return [0.30, 1.00]; // 30-100% expected returns
-      
+
       case StrategyType.BALANCED:
         return [0.15, 0.50]; // 15-50% expected returns
-      
+
       case StrategyType.CONSERVATIVE:
         return [0.08, 0.25]; // 8-25% expected returns
-      
+
       default:
         return [0.15, 0.50]; // Default to balanced
     }
   }
-} 
+}

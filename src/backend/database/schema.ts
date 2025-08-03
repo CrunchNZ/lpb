@@ -152,4 +152,4 @@ export class DatabaseSchema {
   getDatabase(): Database {
     return this.db;
   }
-} 
+}

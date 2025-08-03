@@ -1,8 +1,8 @@
 /**
  * Strategy Manager Implementation
- * 
+ *
  * Coordinates multiple strategies and executes decisions
- * 
+ *
  * @reference PRD.md#4.1 - Strategy Execution
  * @reference DTS.md#3.1 - Strategy Manager
  */
@@ -26,10 +26,10 @@ export class StrategyManager implements IStrategyManager {
     try {
       const strategyId = this.generateStrategyId(strategy);
       this.strategies.set(strategyId, strategy);
-      
+
       console.log(`StrategyManager: Added strategy ${strategyId}`, {
         type: strategy.config.type,
-        riskTolerance: strategy.config.riskTolerance
+        riskTolerance: strategy.config.riskTolerance,
       });
     } catch (error) {
       console.error('StrategyManager: Error adding strategy', error);
@@ -43,7 +43,7 @@ export class StrategyManager implements IStrategyManager {
   removeStrategy(strategyId: string): void {
     try {
       const removed = this.strategies.delete(strategyId);
-      
+
       if (removed) {
         console.log(`StrategyManager: Removed strategy ${strategyId}`);
       } else {
@@ -82,7 +82,7 @@ export class StrategyManager implements IStrategyManager {
         try {
           const decision = await this.executeSingleStrategy(strategy, token, marketData);
           decisions.push(decision);
-          
+
           if (decision.shouldEnter) {
             totalConfidence += decision.confidence;
             totalPositionSize += decision.positionSize || 0;
@@ -102,7 +102,7 @@ export class StrategyManager implements IStrategyManager {
         shouldEnter,
         positionSize: shouldEnter ? avgPositionSize : undefined,
         confidence: avgConfidence,
-        reasoning: totalReasoning || 'No strategies recommend entry'
+        reasoning: totalReasoning || 'No strategies recommend entry',
       };
 
       console.log(`StrategyManager: Final decision for ${token.symbol}`, finalDecision);
@@ -110,12 +110,12 @@ export class StrategyManager implements IStrategyManager {
       return finalDecision;
     } catch (error) {
       console.error('StrategyManager: Error executing strategy', error);
-      
+
       // Return safe default decision
       return {
         shouldEnter: false,
         confidence: 0,
-        reasoning: 'Error occurred during strategy execution'
+        reasoning: 'Error occurred during strategy execution',
       };
     }
   }
@@ -128,31 +128,31 @@ export class StrategyManager implements IStrategyManager {
    * @returns Strategy decision
    */
   private async executeSingleStrategy(
-    strategy: Strategy, 
-    token: Token, 
+    strategy: Strategy,
+    token: Token,
     marketData: MarketData
   ): Promise<StrategyDecision> {
     try {
       // Check if should enter
       const shouldEnter = await strategy.shouldEnter(token, marketData);
-      
+
       if (!shouldEnter) {
         return {
           shouldEnter: false,
           confidence: 0,
-          reasoning: `${strategy.config.type} strategy: Entry criteria not met`
+          reasoning: `${strategy.config.type} strategy: Entry criteria not met`,
         };
       }
 
       // Calculate position size (assuming $10000 portfolio for demo)
       const portfolioValue = 10000;
       const positionSize = await strategy.calculatePositionSize(token, portfolioValue);
-      
+
       if (positionSize === 0) {
         return {
           shouldEnter: false,
           confidence: 0,
-          reasoning: `${strategy.config.type} strategy: Position size too small`
+          reasoning: `${strategy.config.type} strategy: Position size too small`,
         };
       }
 
@@ -166,14 +166,14 @@ export class StrategyManager implements IStrategyManager {
         shouldEnter: true,
         positionSize,
         confidence,
-        reasoning
+        reasoning,
       };
     } catch (error) {
       console.error('StrategyManager: Error executing single strategy', error);
       return {
         shouldEnter: false,
         confidence: 0,
-        reasoning: `Error in ${strategy.config.type} strategy execution`
+        reasoning: `Error in ${strategy.config.type} strategy execution`,
       };
     }
   }
@@ -312,12 +312,12 @@ export class StrategyManager implements IStrategyManager {
       const stats = {
         totalStrategies: this.strategies.size,
         strategyTypes: {} as Record<string, number>,
-        riskLevels: {} as Record<string, number>
+        riskLevels: {} as Record<string, number>,
       };
 
       for (const strategy of this.strategies.values()) {
         // Count strategy types
-        const type = strategy.config.type;
+        const {type} = strategy.config;
         stats.strategyTypes[type] = (stats.strategyTypes[type] || 0) + 1;
 
         // Count risk levels
@@ -331,7 +331,7 @@ export class StrategyManager implements IStrategyManager {
       return {
         totalStrategies: 0,
         strategyTypes: {},
-        riskLevels: {}
+        riskLevels: {},
       };
     }
   }
@@ -373,12 +373,12 @@ export class StrategyManager implements IStrategyManager {
       // Create new strategy with updated config
       const updatedStrategy = this.factory.createStrategy(strategy.config.type, {
         ...strategy.config,
-        ...config
+        ...config,
       });
 
       // Replace old strategy
       this.strategies.set(strategyId, updatedStrategy);
-      
+
       console.log(`StrategyManager: Updated strategy ${strategyId}`, config);
       return true;
     } catch (error) {
@@ -386,4 +386,4 @@ export class StrategyManager implements IStrategyManager {
       return false;
     }
   }
-} 
+}

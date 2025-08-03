@@ -19,7 +19,7 @@ export class PerformanceDAO {
 
   async createMetrics(metrics: Omit<PerformanceMetrics, 'id'>): Promise<string> {
     const id = `perf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return new Promise((resolve, reject) => {
       const stmt = this.db.prepare(`
         INSERT INTO performance_metrics (
@@ -36,7 +36,7 @@ export class PerformanceDAO {
         metrics.totalApy,
         metrics.activePositions,
         metrics.closedPositions,
-        metrics.strategyBreakdown
+        metrics.strategyBreakdown,
       ], function(err) {
         if (err) {
           reject(err);
@@ -208,7 +208,7 @@ export class PerformanceDAO {
 
   async cleanupOldMetrics(olderThanDays: number): Promise<number> {
     const cutoffTime = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
-    
+
     return new Promise((resolve, reject) => {
       this.db.run(
         'DELETE FROM performance_metrics WHERE timestamp < ?',
@@ -233,7 +233,7 @@ export class PerformanceDAO {
       totalApy: row.total_apy,
       activePositions: row.active_positions,
       closedPositions: row.closed_positions,
-      strategyBreakdown: row.strategy_breakdown
+      strategyBreakdown: row.strategy_breakdown,
     };
   }
-} 
+}
