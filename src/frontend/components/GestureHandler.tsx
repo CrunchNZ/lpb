@@ -19,11 +19,7 @@ interface GestureHandlerProps {
   doubleTapDelay?: number;
 }
 
-interface TouchPoint {
-  x: number;
-  y: number;
-  timestamp: number;
-}
+// TouchPoint interface intentionally omitted as not used
 
 interface GestureState {
   startX: number;
@@ -176,7 +172,7 @@ export const GestureHandler: React.FC<GestureHandlerProps> = ({
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = (_e: React.TouchEvent) => {
     if (disabled || !gestureState.current.isTracking) return;
 
     const endTime = Date.now();

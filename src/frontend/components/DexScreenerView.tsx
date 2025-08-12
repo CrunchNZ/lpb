@@ -370,9 +370,14 @@ export const DexScreenerView: React.FC<DexScreenerViewProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {sortedTokens.map((token, index) => (
+              {sortedTokens.map((token) => (
                 <div
-                  key={`${token.pairAddress}-${index}`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') handleTokenClick(token);
+                  }}
+                  key={`${token.pairAddress}`}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
                   onClick={() => handleTokenClick(token)}
                 >

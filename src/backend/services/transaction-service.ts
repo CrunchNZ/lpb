@@ -377,7 +377,7 @@ export class TransactionService {
    */
   async estimateTransactionFee(
     instructions: TransactionInstruction[],
-    signers: Keypair[]
+    _signers: Keypair[]
   ): Promise<number> {
     try {
       const transaction = new Transaction();
