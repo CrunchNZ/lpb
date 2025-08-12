@@ -3,7 +3,7 @@ productName: Liquidity Sentinel
 copyright: Copyright © 2024 Solana Liquidity Sentinel Team
 
 directories:
-  output: dist
+  output: release
   buildResources: build
 
 files:

@@ -20,7 +20,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20.x'
+        node-version: '22.x'
         cache: 'npm'
     
     - name: Install dependencies
@@ -34,7 +34,10 @@ jobs:
         VITE_JUPITER_API_URL: https://quote-api.jup.ag/v6
 
     - name: Package Electron app and publish
-      run: npm run build:electron -- --publish always
+      run: |
+        if [[ "${{ runner.os }}" == "Linux" ]]; then npm run build:electron -- --linux --publish always; fi
+        if [[ "${{ runner.os }}" == "macOS" ]]; then npm run build:electron -- --mac --publish always; fi
+        if [[ "${{ runner.os }}" == "Windows" ]]; then npm run build:electron -- --win --publish always; fi
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -43,12 +46,12 @@ jobs:
         CSC_LINK: ${{ secrets.CSC_LINK }}
         CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
     
-    - name: Upload dist artifacts (fallback)
+    - name: Upload release artifacts (fallback)
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: dist-${{ runner.os }}
-        path: dist/**
+        name: release-${{ runner.os }}
+        path: release/**
         retention-days: 7
     
     - name: Notify release
