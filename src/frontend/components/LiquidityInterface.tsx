@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Droplets, Layers, Zap, TrendingUp, Search, Plus, AlertCircle, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { Droplets, Layers, Zap, TrendingUp, Search, Plus, XCircle, Filter } from 'lucide-react';
 import { PoolCard } from './PoolCard';
 
 interface Pool {

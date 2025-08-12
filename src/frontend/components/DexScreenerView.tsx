@@ -51,6 +51,7 @@ export const DexScreenerView: React.FC<DexScreenerViewProps> = ({
     minVolume: 100000,
     minMarketCap: 150000,
   });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'volume' | 'marketCap' | 'priceChange24h' | 'age'>('volume');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');

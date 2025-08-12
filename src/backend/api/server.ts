@@ -19,7 +19,9 @@ try {
       tracesSampleRate: 0.1,
     });
   }
-} catch {}
+} catch {
+  // noop
+}
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -152,4 +154,4 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-export default app; 
+export default app;
