@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PerformanceMetrics } from '../../backend/database';
 
 interface PerformanceAnalyticsProps {
@@ -121,15 +121,14 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex space-x-2">
-            {(['1d', '7d', '30d', '90d', '1y'] as const).map((range) => (
+      {(['1d', '7d', '30d', '90d', '1y'] as const).map((range) => (
               <button
                 key={range}
                 onClick={() => onTimeRangeChange(range)}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  timeRange === range
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+          className={
+            `px-4 py-2 text-sm font-medium rounded-md transition-colors ` +
+            (timeRange === range ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
+          }
               >
                 {getTimeRangeLabel(range)}
               </button>
@@ -140,11 +139,10 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
               <button
                 key={metric}
                 onClick={() => setSelectedMetric(metric)}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  selectedMetric === metric
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+            className={
+              `px-3 py-1 text-xs font-medium rounded-md transition-colors ` +
+              (selectedMetric === metric ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
+            }
               >
                 {getMetricLabel()}
               </button>

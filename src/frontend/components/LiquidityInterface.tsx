@@ -115,6 +115,7 @@ const mockPools: Pool[] = [
 ];
 
 export const LiquidityInterface: React.FC = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedPool, setSelectedPool] = useState<number | null>(null);
   const [contractAddress, setContractAddress] = useState<string>('');
   const [showContractInput, setShowContractInput] = useState<boolean>(false);
