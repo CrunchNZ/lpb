@@ -89,7 +89,6 @@ router.put('/:id', ensureDatabase, async (req, res) => {
   try {
     const watchlistId = parseInt(req.params.id);
     const { name } = req.body;
-    
     if (isNaN(watchlistId)) {
       return res.status(400).json({ error: 'Invalid watchlist ID' });
     }
@@ -149,8 +148,8 @@ router.post('/:id/tokens', ensureDatabase, async (req, res) => {
     }
 
     if (!tokenSymbol || !tokenName || !pairAddress) {
-      return res.status(400).json({ 
-        error: 'tokenSymbol, tokenName, and pairAddress are required' 
+      return res.status(400).json({
+        error: 'tokenSymbol, tokenName, and pairAddress are required',
       });
     }
 
@@ -162,8 +161,8 @@ router.post('/:id/tokens', ensureDatabase, async (req, res) => {
 
     // Check if token is already in watchlist
     const existingTokens = await databaseManager.getWatchlistTokens(watchlistId);
-    const isAlreadyAdded = existingTokens.some(token => 
-      token.tokenSymbol.toLowerCase() === tokenSymbol.toLowerCase()
+    const isAlreadyAdded = existingTokens.some(
+      (token) => token.tokenSymbol.toLowerCase() === tokenSymbol.toLowerCase(),
     );
 
     if (isAlreadyAdded) {
@@ -229,11 +228,7 @@ router.get('/tokens/:tokenSymbol', ensureDatabase, async (req, res) => {
     const isWatchlisted = await databaseManager.isTokenWatchlisted(tokenSymbol);
     const watchlists = await databaseManager.getWatchlistsForToken(tokenSymbol);
 
-    res.json({
-      tokenSymbol,
-      isWatchlisted,
-      watchlists
-    });
+    res.json({ tokenSymbol, isWatchlisted, watchlists });
   } catch (error) {
     console.error('Error checking token watchlist status:', error);
     res.status(500).json({ error: 'Failed to check token watchlist status' });

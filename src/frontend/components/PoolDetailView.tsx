@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { 
   TrendingUp, 
-  TrendingDown, 
   DollarSign, 
   Percent, 
-  Users, 
+  
   Activity,
   AlertTriangle,
   Calculator,
   BarChart3,
-  Settings,
+  
   RefreshCw,
   Download,
   Eye,
