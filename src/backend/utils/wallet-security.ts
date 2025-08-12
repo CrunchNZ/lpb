@@ -9,7 +9,7 @@
  * - Rate limiting and protection
  */
 
-import { Keypair, PublicKey, Transaction, TransactionSignature } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';

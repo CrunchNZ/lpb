@@ -9,7 +9,7 @@
  * - Real-time price monitoring
  */
 
-import { Connection, Keypair, PublicKey, Transaction, TransactionSignature } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import { jupiterConfig, jupiterRateLimiter, jupiterCache } from '../config/jupiter-config';
 import axios from 'axios';
 

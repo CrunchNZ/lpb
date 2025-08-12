@@ -13,11 +13,11 @@ const router = express.Router();
 const dbManager = new DatabaseManager();
 
 // Middleware to handle errors
-const errorHandler = (err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+const errorHandler = (err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('DexScreener API Error:', err);
   res.status(500).json({
     error: 'Internal server error',
-    message: err.message
+    message: err.message,
   });
 };
 
@@ -36,7 +36,7 @@ router.get('/search', async (req, res, next) => {
       chainId: chainId as string,
       minVolume: minVolume ? parseInt(minVolume as string) : undefined,
       minMarketCap: minMarketCap ? parseInt(minMarketCap as string) : undefined,
-      trending: trending as string
+      trending: trending as string,
     };
 
     const dexscreener = getDexScreenerAPI(dbManager);
@@ -56,7 +56,7 @@ router.get('/trending', async (req, res, next) => {
     const filters = {
       chainId: chainId as string,
       minVolume: minVolume ? parseInt(minVolume as string) : undefined,
-      minMarketCap: minMarketCap ? parseInt(minMarketCap as string) : undefined
+      minMarketCap: minMarketCap ? parseInt(minMarketCap as string) : undefined,
     };
 
     const dexscreener = getDexScreenerAPI(dbManager);
@@ -75,7 +75,7 @@ router.get('/token/:chainId/:pairAddress', async (req, res, next) => {
     
     if (!pairAddress) {
       return res.status(400).json({
-        error: 'Pair address is required'
+        error: 'Pair address is required',
       });
     }
 
@@ -84,7 +84,7 @@ router.get('/token/:chainId/:pairAddress', async (req, res, next) => {
     
     if (!token) {
       return res.status(404).json({
-        error: 'Token not found'
+        error: 'Token not found',
       });
     }
     
@@ -101,7 +101,7 @@ router.get('/token-data/:symbol', async (req, res, next) => {
     
     if (!symbol) {
       return res.status(400).json({
-        error: 'Symbol is required'
+        error: 'Symbol is required',
       });
     }
 
@@ -110,7 +110,7 @@ router.get('/token-data/:symbol', async (req, res, next) => {
     
     if (!token) {
       return res.status(404).json({
-        error: 'Token not found'
+        error: 'Token not found',
       });
     }
     
@@ -127,7 +127,7 @@ router.get('/token-pools/:chainId/:tokenAddress', async (req, res, next) => {
     
     if (!tokenAddress) {
       return res.status(400).json({
-        error: 'Token address is required'
+        error: 'Token address is required',
       });
     }
 

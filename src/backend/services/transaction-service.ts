@@ -15,9 +15,6 @@ import {
   PublicKey,
   Transaction,
   TransactionInstruction,
-  TransactionSignature,
-  sendAndConfirmTransaction,
-  ConfirmOptions,
   Commitment,
 } from '@solana/web3.js';
 import { walletSecurity } from '../utils/wallet-security';
