@@ -116,9 +116,8 @@
     "dotenv": "^16.4.5",
     "electron-updater": "^6.3.9",
     "@sentry/electron": "^5.2.7",
-    "@sentry/react": "^8.27.0",
-    "@sentry/tracing": "^8.27.0",
-    "@sentry/node": "^8.27.0"
+    "@sentry/react": "^8.0.0",
+    "@sentry/node": "^8.0.0"
   },
   "build": {
     "appId": "com.solanaliquiditysentinel.app",

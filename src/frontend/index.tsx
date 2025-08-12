@@ -4,11 +4,15 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Sentry = require('@sentry/react');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { BrowserTracing } = require('@sentry/tracing');
+    const integrations: any[] = [];
+    try {
+      if (typeof Sentry.browserTracingIntegration === 'function') {
+        integrations.push(Sentry.browserTracingIntegration());
+      }
+    } catch {}
     Sentry.init({
       dsn: import.meta.env.VITE_SENTRY_DSN,
-      integrations: [new BrowserTracing()],
+      integrations,
       tracesSampleRate: 0.1,
       environment: import.meta.env.VITE_APP_ENV || 'production',
     });
