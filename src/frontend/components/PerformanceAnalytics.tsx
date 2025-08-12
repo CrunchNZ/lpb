@@ -69,12 +69,12 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
     }
   };
 
-  const getMetricColor = (value: number) => {
-    if (selectedMetric === 'apy') {
-      return value >= 0 ? 'text-green-600' : 'text-red-600';
-    }
-    return selectedMetric === 'pnl' ? (value >= 0 ? 'text-green-600' : 'text-red-600') : 'text-blue-600';
-  };
+  // const getMetricColor = (value: number) => {
+  //   if (selectedMetric === 'apy') {
+  //     return value >= 0 ? 'text-green-600' : 'text-red-600';
+  //   }
+  //   return selectedMetric === 'pnl' ? (value >= 0 ? 'text-green-600' : 'text-red-600') : 'text-blue-600';
+  // };
 
   const getMetricLabel = () => {
     switch (selectedMetric) {
@@ -89,17 +89,17 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
     }
   };
 
-  const getMetricFormat = (value: number) => {
-    switch (selectedMetric) {
-      case 'value':
-      case 'pnl':
-        return formatCurrency(value);
-      case 'apy':
-        return formatPercentage(value);
-      default:
-        return value.toString();
-    }
-  };
+  // const getMetricFormat = (value: number) => {
+  //   switch (selectedMetric) {
+  //     case 'value':
+  //     case 'pnl':
+  //       return formatCurrency(value);
+  //     case 'apy':
+  //       return formatPercentage(value);
+  //     default:
+  //       return value.toString();
+  //   }
+  // };
 
   // Calculate performance statistics
   const latestMetric = displayMetrics[displayMetrics.length - 1];
@@ -183,7 +183,7 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Trend</h3>
         <div className="bg-gray-50 rounded-lg p-6 h-64 flex items-end justify-between">
-          {displayMetrics.map((metric, index) => {
+      {displayMetrics.map((metric) => {
             const value = getMetricValue(metric);
             const maxValue = Math.max(...displayMetrics.map(m => getMetricValue(m)));
             const minValue = Math.min(...displayMetrics.map(m => getMetricValue(m)));

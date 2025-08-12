@@ -45,7 +45,6 @@ router.get('/', ensureDatabase, async (req, res) => {
 router.post('/', ensureDatabase, async (req, res) => {
   try {
     const { name } = req.body;
-    
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return res.status(400).json({ error: 'Watchlist name is required' });
     }
@@ -65,7 +64,6 @@ router.post('/', ensureDatabase, async (req, res) => {
 router.get('/:id', ensureDatabase, async (req, res) => {
   try {
     const watchlistId = parseInt(req.params.id);
-    
     if (isNaN(watchlistId)) {
       return res.status(400).json({ error: 'Invalid watchlist ID' });
     }

@@ -97,7 +97,9 @@ try {
     app.use(sentryExpress.Handlers.requestHandler());
     app.use(sentryExpress.Handlers.tracingHandler());
   }
-} catch {}
+} catch {
+  // noop
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -131,8 +133,10 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
     if (sentryExpress && process.env.VITE_SENTRY_DSN) {
       sentryExpress.captureException(err);
     }
-  } catch {}
-  
+  } catch {
+    // noop
+  }
+
   res.status(500).json({
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
