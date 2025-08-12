@@ -103,6 +103,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       await scaleOut(menuRef.current);
       setIsOpen(false);
     }
+    return;
   };
 
   return (

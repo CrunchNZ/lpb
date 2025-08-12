@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { PerformanceMetrics } from '../../backend/database';
+import { PerformanceMetrics } from '../../../backend/database';
 
 export interface PerformanceState {
   metrics: PerformanceMetrics[];

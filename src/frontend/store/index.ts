@@ -5,6 +5,8 @@ import positionsReducer from './slices/positionsSlice';
 import performanceReducer from './slices/performanceSlice';
 import uiReducer from './slices/uiSlice';
 import dexscreenerReducer from './slices/dexscreenerSlice';
+import walletReducer from './slices/walletSlice';
+import watchlistReducer from './slices/watchlistSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +15,8 @@ export const store = configureStore({
     performance: performanceReducer,
     ui: uiReducer,
     dexscreener: dexscreenerReducer,
+    wallet: walletReducer,
+    watchlist: watchlistReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

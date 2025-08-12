@@ -76,7 +76,10 @@ jest.mock('lucide-react', () => ({
   Eye: () => <div data-testid="eye-icon">Eye</div>,
   RefreshCw: () => <div data-testid="refresh-icon">RefreshCw</div>,
   Star: () => <div data-testid="star-icon">Star</div>,
-  ChevronDown: () => <div data-testid="chevron-down-icon">ChevronDown</div>
+  ChevronDown: () => <div data-testid="chevron-down-icon">ChevronDown</div>,
+  Copy: () => <div data-testid="copy-icon">Copy</div>,
+  Check: () => <div data-testid="check-icon">Check</div>,
+  ExternalLink: () => <div data-testid="external-link-icon">ExternalLink</div>
 }));
 
 describe('UI Components', () => {

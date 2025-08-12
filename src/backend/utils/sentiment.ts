@@ -69,7 +69,7 @@ export class SentimentAnalyzer {
         'tweet.fields': ['created_at', 'text', 'public_metrics'],
       });
 
-      if (!tweets.data || tweets.data.length === 0) {
+      if (!tweets.data || !Array.isArray(tweets.data) || tweets.data.length === 0) {
         console.log(`SentimentAnalyzer: No tweets found for ${tokenSymbol}`);
         return this.createNeutralResult(tokenSymbol);
       }
@@ -159,7 +159,7 @@ export class SentimentAnalyzer {
         'tweet.fields': ['created_at', 'text', 'public_metrics'],
       });
 
-      if (!tweets.data || tweets.data.length === 0) {
+      if (!tweets.data || !Array.isArray(tweets.data) || tweets.data.length === 0) {
         return this.createNeutralResult('MARKET');
       }
 

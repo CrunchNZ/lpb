@@ -3,24 +3,22 @@
  * Tests the integration between Dexscreener API and Watchlist functionality
  */
 
-import { DexscreenerAPI } from '../src/backend/integrations/dexscreener';
-import { WatchlistDAO } from '../src/backend/database/WatchlistDAO';
+import { getDexScreenerAPI } from '../src/backend/integrations/dexscreener';
 import { DatabaseManager } from '../src/backend/database/DatabaseManager';
+import { WatchlistDAO } from '../src/backend/database/WatchlistDAO';
 
 // Mock fetch for Dexscreener API
 global.fetch = jest.fn();
 
 describe('Token Search Integration', () => {
-  let dexScreener: DexscreenerAPI;
+  let dexScreener: any;
   let dbManager: DatabaseManager;
   let watchlistDAO: WatchlistDAO;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    
+  beforeEach(async () => {
     // Create in-memory database for testing
     dbManager = new DatabaseManager(':memory:');
-    dexScreener = new DexscreenerAPI(dbManager);
+    dexScreener = getDexScreenerAPI(dbManager);
     watchlistDAO = new WatchlistDAO(dbManager.schema.getDatabase());
   });
 

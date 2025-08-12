@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global scrolling fixes */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Apple Design System - Liquidity Sentinel */
 
 :root {

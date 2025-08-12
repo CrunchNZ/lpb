@@ -8,6 +8,8 @@
  * - tvl: number (Total Value Locked)
  * - apr: number (Annual Percentage Rate)
  * - userLiquidity: number (user's share in the pool)
+ * - lpFee: number (liquidity provider fee percentage)
+ * - poolAddress: string (contract address)
  * - onAddLiquidity: () => void
  * - onRemoveLiquidity: () => void
  * - onViewDetails: () => void
@@ -15,6 +17,9 @@
 import React, { useState } from 'react';
 import { useAppDispatch } from '../store';
 import { openPoolDetail } from '../store/slices/uiSlice';
+import { Copy, Check, ExternalLink } from 'lucide-react';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 
 export interface PoolCardProps {
   poolName: string;
@@ -22,6 +27,9 @@ export interface PoolCardProps {
   tvl: number;
   apr: number;
   userLiquidity: number;
+  lpFee: number;
+  poolAddress: string;
+  chainId: string;
   onAddLiquidity: () => void;
   onRemoveLiquidity: () => void;
   onViewDetails: () => void;
@@ -43,6 +51,9 @@ export const PoolCard: React.FC<PoolCardProps> = ({
   tvl,
   apr,
   userLiquidity,
+  lpFee,
+  poolAddress,
+  chainId,
   onAddLiquidity,
   onRemoveLiquidity,
   onViewDetails
@@ -53,6 +64,32 @@ export const PoolCard: React.FC<PoolCardProps> = ({
   // State for hover/press feedback
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedAddress(text);
+      setTimeout(() => setCopiedAddress(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
+  };
+
+  const openExplorer = (address: string, chainId: string) => {
+    let explorerUrl = '';
+    switch (chainId) {
+      case 'solana':
+        explorerUrl = `https://solscan.io/account/${address}`;
+        break;
+      case 'ethereum':
+        explorerUrl = `https://etherscan.io/address/${address}`;
+        break;
+      default:
+        explorerUrl = `https://explorer.${chainId}.org/address/${address}`;
+    }
+    window.open(explorerUrl, '_blank');
+  };
 
   // Apple-style card classes
   const cardBase = `
@@ -87,8 +124,8 @@ export const PoolCard: React.FC<PoolCardProps> = ({
             fees24h: tvl * 0.001,
             userLiquidity,
             userShare: (userLiquidity / tvl) * 100,
-            poolAddress: '0x1234567890abcdef',
-            chainId: 'solana',
+            poolAddress,
+            chainId,
             createdAt: Date.now() - 86400000 * 30,
             lastUpdated: Date.now() - 3600000,
             riskLevel: 'medium',
@@ -128,6 +165,44 @@ export const PoolCard: React.FC<PoolCardProps> = ({
         <div>
           <div className="font-bold text-lg text-white mb-1">{poolName}</div>
           <div className="text-xs text-blue-300 font-semibold uppercase tracking-wide mb-1">{platform}</div>
+          {/* Contract Address */}
+          <div className="flex items-center space-x-1 mt-1">
+            <span className="text-xs text-gray-400 font-mono">
+              {poolAddress ? `${poolAddress.slice(0, 6)}...${poolAddress.slice(-4)}` : 'Address not available'}
+            </span>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (poolAddress) {
+                  copyToClipboard(poolAddress);
+                }
+              }}
+              variant="ghost"
+              size="sm"
+              className="h-4 w-4 p-0"
+              disabled={!poolAddress}
+            >
+              {copiedAddress === poolAddress ? (
+                <Check size={10} className="text-green-500" />
+              ) : (
+                <Copy size={10} className="text-gray-400" />
+              )}
+            </Button>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (poolAddress) {
+                  openExplorer(poolAddress, chainId);
+                }
+              }}
+              variant="ghost"
+              size="sm"
+              className="h-4 w-4 p-0"
+              disabled={!poolAddress}
+            >
+              <ExternalLink size={10} className="text-gray-400" />
+            </Button>
+          </div>
         </div>
         <div className="text-right">
           <div className="text-sm text-gray-200 font-medium">TVL</div>
@@ -135,8 +210,15 @@ export const PoolCard: React.FC<PoolCardProps> = ({
         </div>
       </div>
       <div className="flex items-center justify-between px-5 pb-3">
-        <div className="text-sm text-gray-300">APR <span className="font-semibold text-green-400">{apr}%</span></div>
-        <div className="text-sm text-gray-300">Your Liquidity <span className="font-semibold text-cyan-300">{formatCurrency(userLiquidity)}</span></div>
+        <div className="text-sm text-gray-300">
+          APR <span className="font-semibold text-green-400">{apr}%</span>
+        </div>
+        <div className="text-sm text-gray-300">
+          LP Fee <span className="font-semibold text-cyan-300">{lpFee}%</span>
+        </div>
+        <div className="text-sm text-gray-300">
+          Your Liquidity <span className="font-semibold text-cyan-300">{formatCurrency(userLiquidity)}</span>
+        </div>
       </div>
       {/* Expandable Content */}
       <div
@@ -146,25 +228,27 @@ export const PoolCard: React.FC<PoolCardProps> = ({
         {/* Expanded details and actions */}
         <div className="px-5 space-y-3">
           <div className="flex gap-2">
-            <button
-              className="flex-1 bg-blue-500/90 hover:bg-blue-600 text-white font-semibold py-2 rounded-xl transition-all duration-200 shadow"
+            <Button
               onClick={e => { e.stopPropagation(); onAddLiquidity(); }}
+              className="flex-1"
             >
               Add Liquidity
-            </button>
-            <button
-              className="flex-1 bg-red-500/90 hover:bg-red-600 text-white font-semibold py-2 rounded-xl transition-all duration-200 shadow"
+            </Button>
+            <Button
               onClick={e => { e.stopPropagation(); onRemoveLiquidity(); }}
+              variant="destructive"
+              className="flex-1"
             >
               Remove Liquidity
-            </button>
+            </Button>
           </div>
-          <button
-            className="w-full bg-white/10 hover:bg-white/20 text-blue-300 font-semibold py-2 rounded-xl transition-all duration-200 shadow border border-blue-400/20"
+          <Button
             onClick={e => { e.stopPropagation(); onViewDetails(); }}
+            variant="outline"
+            className="w-full"
           >
             View Details
-          </button>
+          </Button>
         </div>
       </div>
       {/* Click indicator */}

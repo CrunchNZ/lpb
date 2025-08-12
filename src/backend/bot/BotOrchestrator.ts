@@ -165,7 +165,7 @@ export class BotOrchestrator {
       console.log('BotOrchestrator: Polling watchlisted tokens...');
 
       // Get all watchlists and their tokens
-      const watchlists = await this.databaseManager.getWatchlists();
+      const watchlists = await this.databaseManager.getAllWatchlists();
       const activePositions = await this.databaseManager.getActivePositions();
       const existingTokens = new Set(activePositions.map(p => p.tokenA));
 
@@ -214,9 +214,15 @@ export class BotOrchestrator {
       // Execute strategy analysis
       const decision = await this.strategyManager.executeStrategy(
         {
+          address: token.pairAddress,
           symbol: token.symbol,
           name: token.name,
-          address: token.pairAddress,
+          marketCap: token.marketCap,
+          price: token.price,
+          volume24h: token.volume24h,
+          tvl: token.liquidity || 0,
+          sentiment: 0, // Will be calculated by strategy
+          trending: false, // Will be determined by strategy
         },
         marketData
       );

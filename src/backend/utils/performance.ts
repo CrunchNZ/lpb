@@ -23,7 +23,7 @@ export interface PerformanceStats {
 }
 
 export class PerformanceMonitor {
-  private metrics: PerformanceMetric[] = [];
+  protected metrics: PerformanceMetric[] = [];
   private maxMetrics: number = 10000;
   private slowQueryThreshold: number = 1000; // 1 second
   private errorThreshold: number = 5000; // 5 seconds
@@ -123,7 +123,7 @@ export class PerformanceMonitor {
   /**
    * Record a performance metric
    */
-  private recordMetric(metric: PerformanceMetric): void {
+  protected recordMetric(metric: PerformanceMetric): void {
     this.metrics.push(metric);
 
     // Keep only the latest metrics

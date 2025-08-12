@@ -1,688 +1,526 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '../store';
-import {
-  setSearchQuery,
-  setSearchResults,
-  setTrendingTokens,
-  setSelectedToken,
-  updateFilters,
-  setLoading,
-  setError,
-  setActiveView,
-  setSortBy,
-  setSortOrder,
-  setPage,
-  clearSearch,
-  resetFilters,
-  TokenData,
-  SearchFilters,
-} from '../store/slices/dexscreenerSlice';
-import { LoadingSpinner } from './LoadingSpinner';
+/**
+ * DexScreenerView Component
+ * Enhanced version with comprehensive token search and display functionality
+ * Matches TokenSearch styling and includes all requested features
+ */
 
-interface DexScreenerViewProps {
-  databaseManager?: any;
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAppDispatch, useAppSelector } from '../store';
+import { setSearchResults, setTrendingTokens, setLoading, setError } from '../store/slices/dexscreenerSlice';
+import { DatabaseManager } from '../../backend/database/DatabaseManager';
+import { dexscreenerService } from '../services/dexscreenerService';
+import { TokenData } from '../../backend/integrations/dexscreener';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Search, Filter, Copy, ExternalLink, TrendingUp, TrendingDown, Clock, Users, Activity, Eye, Zap, Star } from 'lucide-react';
+import { TokenDetailView } from './TokenDetailView';
+import { WatchlistSelector } from './WatchlistSelector';
+
+interface SearchFilters {
+  minMarketCap?: number;
+  minVolume?: number;
+  chainId?: string;
+  trending?: string;
 }
 
-export const DexScreenerView: React.FC<DexScreenerViewProps> = ({ databaseManager }) => {
+interface DexScreenerViewProps {
+  databaseManager?: DatabaseManager | null;
+  onTokenSelect?: (token: TokenData) => void;
+  onAddToWatchlist?: (token: TokenData, watchlistId: number) => void;
+  watchlists?: Array<{ id: number; name: string }>;
+}
+
+export const DexScreenerView: React.FC<DexScreenerViewProps> = ({ 
+  databaseManager,
+  onTokenSelect,
+  onAddToWatchlist,
+  watchlists = []
+}) => {
   const dispatch = useAppDispatch();
-  const {
-    searchQuery,
-    searchResults,
-    trendingTokens,
-    selectedToken,
-    filters,
-    loading,
-    error,
-    activeView,
-    sortBy,
-    sortOrder,
-    page,
-    itemsPerPage,
-  } = useAppSelector((state) => state.dexscreener);
+  const { searchResults, trendingTokens, loading, error } = useAppSelector((state) => state.dexscreener);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
+  const [filters, setFilters] = useState<SearchFilters>({
+    chainId: 'solana',
+    minVolume: 100000,
+    minMarketCap: 150000,
+  });
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'volume' | 'marketCap' | 'priceChange24h' | 'age'>('volume');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [activeTab, setActiveTab] = useState<'search' | 'trending'>('search');
 
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const debouncedSearch = useCallback(
+    debounce(async (query: string, filters: SearchFilters) => {
+      if (!query.trim()) {
+        dispatch(setSearchResults({ tokens: [], totalCount: 0, hasMore: false }));
+        return;
+      }
 
-  // Mock DexScreener API calls (in production, these would be real API calls)
-  const searchTokens = useCallback(async (query: string, filters: SearchFilters) => {
+      dispatch(setLoading(true));
+      dispatch(setError(null));
+      
+      try {
+        const result = await dexscreenerService.searchTokens(query, filters);
+        dispatch(setSearchResults(result));
+      } catch (err) {
+        dispatch(setError(err instanceof Error ? err.message : 'Search failed'));
+      } finally {
+        dispatch(setLoading(false));
+      }
+    }, 500),
+    [dispatch]
+  );
+
+  useEffect(() => {
+    debouncedSearch(searchQuery, filters);
+  }, [searchQuery, filters, debouncedSearch]);
+
+  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleTrending = async () => {
     dispatch(setLoading(true));
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock search results
-      const mockTokens: TokenData[] = [
-        {
-          symbol: 'SOL',
-          name: 'Solana',
-          price: 20.5,
-          priceChange24h: 5.2,
-          priceChange1h: 1.1,
-          priceChange6h: 3.4,
-          volume24h: 50000000,
-          marketCap: 1000000000,
-          liquidity: 25000000,
-          age: 48,
-          holders: 50000,
-          transactions24h: 15000,
-          pairAddress: '0x1234567890abcdef',
-          chainId: 'solana',
-          dexId: 'raydium'
-        },
-        {
-          symbol: 'BONK',
-          name: 'Bonk',
-          price: 0.0006,
-          priceChange24h: 15.7,
-          priceChange1h: 2.3,
-          priceChange6h: 8.9,
-          volume24h: 1200000,
-          marketCap: 500000,
-          liquidity: 150000,
-          age: 24,
-          holders: 1250,
-          transactions24h: 850,
-          pairAddress: '0xabcdef1234567890',
-          chainId: 'solana',
-          dexId: 'raydium'
-        },
-        {
-          symbol: 'RAY',
-          name: 'Raydium',
-          price: 15.2,
-          priceChange24h: 3.8,
-          priceChange1h: 0.5,
-          priceChange6h: 2.1,
-          volume24h: 8000000,
-          marketCap: 300000000,
-          liquidity: 5000000,
-          age: 72,
-          holders: 8000,
-          transactions24h: 1200,
-          pairAddress: '0xraydium123456',
-          chainId: 'solana',
-          dexId: 'raydium'
-        },
-        {
-          symbol: 'JUP',
-          name: 'Jupiter',
-          price: 8.9,
-          priceChange24h: 12.3,
-          priceChange1h: 1.8,
-          priceChange6h: 6.7,
-          volume24h: 15000000,
-          marketCap: 200000000,
-          liquidity: 3000000,
-          age: 36,
-          holders: 4500,
-          transactions24h: 950,
-          pairAddress: '0xjupiter123456',
-          chainId: 'solana',
-          dexId: 'raydium'
-        }
-      ];
-
-      // Filter tokens based on query and filters
-      const filteredTokens = mockTokens.filter(token => {
-        const matchesQuery = query === '' || 
-          token.symbol.toLowerCase().includes(query.toLowerCase()) ||
-          token.name.toLowerCase().includes(query.toLowerCase());
-        
-        const matchesFilters = applyFilters(token, filters);
-        
-        return matchesQuery && matchesFilters;
-      });
-
-      dispatch(setSearchResults({
-        tokens: filteredTokens,
-        totalCount: filteredTokens.length,
-        hasMore: false
-      }));
+      const tokens = await dexscreenerService.getTrendingTokens(filters);
+      dispatch(setTrendingTokens(tokens));
     } catch (err) {
-      dispatch(setError('Failed to search tokens'));
+      dispatch(setError(err instanceof Error ? err.message : 'Failed to load trending tokens'));
+    } finally {
+      dispatch(setLoading(false));
     }
-  }, [dispatch]);
+  };
 
-  const loadTrendingTokens = useCallback(async (trendingType: 'gainers' | 'losers' | 'new' = 'gainers') => {
-    dispatch(setLoading(true));
-    
+  const formatNumber = (num: number): string => {
+    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+    if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+    return `$${num.toFixed(2)}`;
+  };
+
+  const formatPercentage = (num: number): string => {
+    const color = num >= 0 ? 'text-green-500' : 'text-red-500';
+    const sign = num >= 0 ? '+' : '';
+    return `<span class="${color}">${sign}${num.toFixed(2)}%</span>`;
+  };
+
+  const formatAge = (hours: number): string => {
+    if (hours < 1) return '<1h';
+    if (hours < 24) return `${Math.floor(hours)}h`;
+    return `${Math.floor(hours / 24)}d`;
+  };
+
+  const copyToClipboard = async (text: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const mockTrendingTokens: TokenData[] = [
-        {
-          symbol: 'SOL',
-          name: 'Solana',
-          price: 20.5,
-          priceChange24h: trendingType === 'gainers' ? 15.2 : trendingType === 'losers' ? -8.7 : 5.2,
-          priceChange1h: 1.1,
-          priceChange6h: 3.4,
-          volume24h: 50000000,
-          marketCap: 1000000000,
-          liquidity: 25000000,
-          age: trendingType === 'new' ? 2 : 48,
-          holders: 50000,
-          transactions24h: 15000,
-          pairAddress: '0x1234567890abcdef',
-          chainId: 'solana',
-          dexId: 'raydium'
-        },
-        {
-          symbol: 'BONK',
-          name: 'Bonk',
-          price: 0.0006,
-          priceChange24h: trendingType === 'gainers' ? 25.7 : trendingType === 'losers' ? -12.3 : 15.7,
-          priceChange1h: 2.3,
-          priceChange6h: 8.9,
-          volume24h: 1200000,
-          marketCap: 500000,
-          liquidity: 150000,
-          age: trendingType === 'new' ? 1 : 24,
-          holders: 1250,
-          transactions24h: 850,
-          pairAddress: '0xabcdef1234567890',
-          chainId: 'solana',
-          dexId: 'raydium'
-        }
-      ];
-
-      dispatch(setTrendingTokens(mockTrendingTokens));
+      await navigator.clipboard.writeText(text);
+      setCopiedAddress(text);
+      setTimeout(() => setCopiedAddress(null), 2000);
     } catch (err) {
-      dispatch(setError('Failed to load trending tokens'));
+      console.error('Failed to copy to clipboard:', err);
     }
-  }, [dispatch]);
-
-  // Apply filters to token data
-  const applyFilters = (token: TokenData, filters: SearchFilters): boolean => {
-    if (filters.minVolume && token.volume24h < filters.minVolume) return false;
-    if (filters.maxVolume && token.volume24h > filters.maxVolume) return false;
-    if (filters.minAge && token.age < filters.minAge) return false;
-    if (filters.maxAge && token.age > filters.maxAge) return false;
-    if (filters.minMarketCap && token.marketCap < filters.minMarketCap) return false;
-    if (filters.maxMarketCap && token.marketCap > filters.maxMarketCap) return false;
-    if (filters.minLiquidity && token.liquidity < filters.minLiquidity) return false;
-    return true;
   };
 
-  // Handle search input with debouncing
-  const handleSearchChange = (query: string) => {
-    dispatch(setSearchQuery(query));
-    
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
+  const openExplorer = (address: string, chainId: string) => {
+    let explorerUrl = '';
+    switch (chainId) {
+      case 'solana':
+        explorerUrl = `https://solscan.io/token/${address}`;
+        break;
+      case 'ethereum':
+        explorerUrl = `https://etherscan.io/token/${address}`;
+        break;
+      default:
+        explorerUrl = `https://explorer.${chainId}.org/token/${address}`;
     }
-    
-    const timeout = setTimeout(() => {
-      if (query.trim()) {
-        searchTokens(query, filters);
-      } else {
-        dispatch(setSearchResults(null));
+    window.open(explorerUrl, '_blank');
+  };
+
+  const handleTokenClick = (token: TokenData) => {
+    setSelectedToken(token);
+    if (onTokenSelect) {
+      onTokenSelect(token);
+    }
+  };
+
+  const handleBackToSearch = () => {
+    setSelectedToken(null);
+  };
+
+  // Sort tokens based on current sort settings
+  const getSortedTokens = (tokens: TokenData[]) => {
+    return [...tokens].sort((a, b) => {
+      let aValue: number;
+      let bValue: number;
+
+      switch (sortBy) {
+        case 'volume':
+          aValue = a.volume24h;
+          bValue = b.volume24h;
+          break;
+        case 'marketCap':
+          aValue = a.marketCap;
+          bValue = b.marketCap;
+          break;
+        case 'priceChange24h':
+          aValue = a.priceChange24h;
+          bValue = b.priceChange24h;
+          break;
+        case 'age':
+          aValue = a.age;
+          bValue = b.age;
+          break;
+        default:
+          aValue = a.volume24h;
+          bValue = b.volume24h;
       }
-    }, 500);
-    
-    setSearchTimeout(timeout);
+
+      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    });
   };
 
-  // Handle filter changes
-  const handleFilterChange = (newFilters: Partial<SearchFilters>) => {
-    dispatch(updateFilters(newFilters));
-    if (searchQuery.trim()) {
-      searchTokens(searchQuery, { ...filters, ...newFilters });
-    }
-  };
-
-  // Load trending tokens on component mount
-  useEffect(() => {
-    loadTrendingTokens('gainers');
-  }, [loadTrendingTokens]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-    };
-  }, [searchTimeout]);
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}K`;
-    }
-    return `$${amount.toFixed(2)}`;
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-  };
-
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
-    }
-    return num.toString();
-  };
-
-  const TokenCard: React.FC<{ token: TokenData; onClick?: () => void }> = ({ token, onClick }) => (
-    <div 
-      className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all duration-200 cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">{token.symbol.charAt(0)}</span>
-          </div>
-          <div>
-            <h3 className="text-white font-semibold">{token.symbol}</h3>
-            <p className="text-gray-400 text-sm">{token.name}</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-white font-semibold">{formatCurrency(token.price)}</p>
-          <p className={`text-sm ${token.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {formatPercentage(token.priceChange24h)}
-          </p>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <p className="text-gray-400">Volume 24h</p>
-          <p className="text-white">{formatCurrency(token.volume24h)}</p>
-        </div>
-        <div>
-          <p className="text-gray-400">Market Cap</p>
-          <p className="text-white">{formatCurrency(token.marketCap)}</p>
-        </div>
-        <div>
-          <p className="text-gray-400">Liquidity</p>
-          <p className="text-white">{formatCurrency(token.liquidity)}</p>
-        </div>
-        <div>
-          <p className="text-gray-400">Holders</p>
-          <p className="text-white">{formatNumber(token.holders)}</p>
-        </div>
-      </div>
-      
-      <div className="mt-3 pt-3 border-t border-white/10">
-        <div className="flex items-center justify-between text-xs text-gray-400">
-          <span>{token.dexId.toUpperCase()}</span>
-          <span>{token.chainId.toUpperCase()}</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const FilterPanel: React.FC = () => (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-      <h3 className="text-white font-semibold mb-4">Filters</h3>
-      
-      <div className="space-y-4">
-        <div>
-          <label className="block text-gray-400 text-sm mb-2">Chain</label>
-          <select
-            value={filters.chainId || 'solana'}
-            onChange={(e) => handleFilterChange({ chainId: e.target.value })}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="solana">Solana</option>
-            <option value="ethereum">Ethereum</option>
-            <option value="bsc">BSC</option>
-            <option value="polygon">Polygon</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-400 text-sm mb-2">Min Volume</label>
-            <input
-              type="number"
-              placeholder="0"
-              value={filters.minVolume || ''}
-              onChange={(e) => handleFilterChange({ minVolume: e.target.value ? Number(e.target.value) : undefined })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-400 text-sm mb-2">Max Volume</label>
-            <input
-              type="number"
-              placeholder="∞"
-              value={filters.maxVolume || ''}
-              onChange={(e) => handleFilterChange({ maxVolume: e.target.value ? Number(e.target.value) : undefined })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-400 text-sm mb-2">Min Market Cap</label>
-            <input
-              type="number"
-              placeholder="150,000"
-              value={filters.minMarketCap || ''}
-              onChange={(e) => handleFilterChange({ minMarketCap: e.target.value ? Number(e.target.value) : undefined })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-400 text-sm mb-2">Max Market Cap</label>
-            <input
-              type="number"
-              placeholder="∞"
-              value={filters.maxMarketCap || ''}
-              onChange={(e) => handleFilterChange({ maxMarketCap: e.target.value ? Number(e.target.value) : undefined })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-gray-400 text-sm mb-2">Min Liquidity</label>
-          <input
-            type="number"
-            placeholder="0"
-            value={filters.minLiquidity || ''}
-            onChange={(e) => handleFilterChange({ minLiquidity: e.target.value ? Number(e.target.value) : undefined })}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-
-        <div className="flex space-x-2">
-          <button
-            onClick={() => resetFilters()}
-            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          >
-            Reset
-          </button>
-          <button
-            onClick={() => dispatch(setActiveView('search'))}
-            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          >
-            Apply
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const TrendingPanel: React.FC = () => (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-semibold">Trending Tokens</h3>
-        <div className="flex space-x-2">
-          {(['gainers', 'losers', 'new'] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => loadTrendingTokens(type)}
-              className="px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 bg-white/10 hover:bg-white/20 text-white"
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      {loading ? (
-        <LoadingSpinner />
-      ) : (
-        <div className="space-y-3">
-          {trendingTokens.map((token) => (
-            <TokenCard
-              key={token.symbol}
-              token={token}
-              onClick={() => dispatch(setSelectedToken(token))}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const TokenDetails: React.FC<{ token: TokenData }> = ({ token }) => (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-xl">{token.symbol.charAt(0)}</span>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white">{token.symbol}</h2>
-            <p className="text-gray-400">{token.name}</p>
-          </div>
-        </div>
-        <button
-          onClick={() => dispatch(setSelectedToken(null))}
-          className="text-gray-400 hover:text-white transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-        <div className="text-center">
-          <p className="text-gray-400 text-sm">Price</p>
-          <p className="text-2xl font-bold text-white">{formatCurrency(token.price)}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-gray-400 text-sm">24h Change</p>
-          <p className={`text-xl font-bold ${token.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {formatPercentage(token.priceChange24h)}
-          </p>
-        </div>
-        <div className="text-center">
-          <p className="text-gray-400 text-sm">Volume 24h</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(token.volume24h)}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-gray-400 text-sm">Market Cap</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(token.marketCap)}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h4 className="text-white font-semibold">Price Changes</h4>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-400">1h</span>
-              <span className={`${token.priceChange1h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {formatPercentage(token.priceChange1h)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">6h</span>
-              <span className={`${token.priceChange6h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {formatPercentage(token.priceChange6h)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">24h</span>
-              <span className={`${token.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {formatPercentage(token.priceChange24h)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h4 className="text-white font-semibold">Token Info</h4>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Liquidity</span>
-              <span className="text-white">{formatCurrency(token.liquidity)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Holders</span>
-              <span className="text-white">{formatNumber(token.holders)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Transactions 24h</span>
-              <span className="text-white">{formatNumber(token.transactions24h)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Age</span>
-              <span className="text-white">{token.age}h</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 pt-6 border-t border-white/10">
-        <div className="flex items-center justify-between text-sm text-gray-400">
-          <span>DEX: {token.dexId.toUpperCase()}</span>
-          <span>Chain: {token.chainId.toUpperCase()}</span>
-          <span>Pair: {token.pairAddress.slice(0, 8)}...{token.pairAddress.slice(-6)}</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (loading && !searchResults && !trendingTokens.length) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
+  // If a token is selected, show the detail view
+  if (selectedToken) {
     return (
-      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 text-red-400">
-        <h2 className="text-xl font-semibold mb-2">Error</h2>
-        <p>{error}</p>
-        <button
-          onClick={() => dispatch(setError(null))}
-          className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-        >
-          Try Again
-        </button>
-      </div>
+      <TokenDetailView
+        token={selectedToken}
+        onBack={handleBackToSearch}
+        onAddToWatchlist={onAddToWatchlist ? (token) => onAddToWatchlist(token, 1) : undefined}
+      />
     );
   }
 
+  const currentTokens = activeTab === 'search' ? (searchResults?.tokens || []) : trendingTokens;
+  const sortedTokens = getSortedTokens(currentTokens);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">DexScreener Explorer</h1>
-          <p className="text-gray-400">Search and analyze tokens across multiple DEXes</p>
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => dispatch(clearSearch())}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          >
-            Clear
-          </button>
-          <button
-            onClick={() => dispatch(setActiveView('filters'))}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          >
-            Filters
-          </button>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            DexScreener
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 bg-muted p-1 rounded-lg">
+            <Button
+              variant={activeTab === 'search' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('search')}
+              className="flex-1"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search
+            </Button>
+            <Button
+              variant={activeTab === 'trending' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                setActiveTab('trending');
+                handleTrending();
+              }}
+              className="flex-1"
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Trending
+            </Button>
+          </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Search tokens by symbol or name..."
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-        />
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          {loading && <LoadingSpinner />}
-        </div>
-      </div>
+          {/* Search Input */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search tokens by symbol or name..."
+                value={searchQuery}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowFilters(!showFilters)}
+              className="sm:w-auto w-full"
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
+          </div>
 
-      {/* Navigation */}
-      <div className="flex space-x-2">
-        {[
-          { id: 'search', label: 'Search Results', icon: '🔍' },
-          { id: 'trending', label: 'Trending', icon: '📈' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => dispatch(setActiveView(tab.id as any))}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeView === tab.id
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
+          {/* Filters */}
+          {showFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/50">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Chain</label>
+                <Select
+                  value={filters.chainId || ''}
+                  onValueChange={(value: string) => handleFilterChange('chainId', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="solana">Solana</SelectItem>
+                    <SelectItem value="ethereum">Ethereum</SelectItem>
+                    <SelectItem value="base">Base</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-      {/* Content */}
-      {activeView === 'search' && (
-        <div className="space-y-6">
-          {searchResults && searchResults.tokens.length > 0 && (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-gray-400">
-                  Found {searchResults.totalCount} tokens
-                </p>
-                <div className="flex items-center space-x-4">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => dispatch(setSortBy(e.target.value as any))}
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="volume">Volume</option>
-                    <option value="price">Price</option>
-                    <option value="marketCap">Market Cap</option>
-                    <option value="priceChange24h">24h Change</option>
-                    <option value="age">Age</option>
-                  </select>
-                  <button
-                    onClick={() => dispatch(setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'))}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </button>
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Min Volume</label>
+                <Select
+                  value={filters.minVolume?.toString() || ''}
+                  onValueChange={(value: string) => handleFilterChange('minVolume', parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="100000">$100K</SelectItem>
+                    <SelectItem value="1000000">$1M</SelectItem>
+                    <SelectItem value="10000000">$10M</SelectItem>
+                    <SelectItem value="100000000">$100M</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {searchResults.tokens.map((token) => (
-                  <TokenCard
-                    key={token.symbol}
-                    token={token}
-                    onClick={() => dispatch(setSelectedToken(token))}
-                  />
-                ))}
+
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                <label className="text-sm font-medium">Min Market Cap</label>
+                <Select
+                  value={filters.minMarketCap?.toString() || ''}
+                  onValueChange={(value: string) => handleFilterChange('minMarketCap', parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="150000">$150K</SelectItem>
+                    <SelectItem value="1000000">$1M</SelectItem>
+                    <SelectItem value="10000000">$10M</SelectItem>
+                    <SelectItem value="100000000">$100M</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </>
-          )}
-          
-          {searchResults && searchResults.tokens.length === 0 && searchQuery && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-300 mb-2">No tokens found</h3>
-              <p className="text-gray-400">Try adjusting your search query or filters</p>
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
+
+      {/* Results */}
+      {loading && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <span className="text-muted-foreground">
+                {activeTab === 'search' ? 'Searching tokens...' : 'Loading trending tokens...'}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {activeView === 'trending' && <TrendingPanel />}
-      {activeView === 'filters' && <FilterPanel />}
-      {selectedToken && <TokenDetails token={selectedToken} />}
+      {error && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-red-500">Error: {error}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !error && sortedTokens.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                {activeTab === 'search' ? 'Search Results' : 'Trending Tokens'} ({sortedTokens.length})
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="volume">Volume</SelectItem>
+                    <SelectItem value="marketCap">Market Cap</SelectItem>
+                    <SelectItem value="priceChange24h">24h Change</SelectItem>
+                    <SelectItem value="age">Age</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {sortedTokens.map((token, index) => (
+                <div
+                  key={`${token.pairAddress}-${index}`}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+                  onClick={() => handleTokenClick(token)}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Token Logo */}
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">
+                        {token.symbol.slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{token.symbol}</h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {token.dexId}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{token.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {token.contractAddress ? 
+                          `${token.contractAddress.slice(0, 6)}...${token.contractAddress.slice(-4)}` : 
+                          'No contract address'
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="font-medium">{formatNumber(token.price)}</p>
+                      <p 
+                        className="text-sm"
+                        dangerouslySetInnerHTML={{ __html: formatPercentage(token.priceChange24h) }}
+                      />
+                    </div>
+
+                    {/* Volume Indicators */}
+                    <div className="text-right">
+                      <div className="flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">5m</span>
+                      </div>
+                      <p className="text-sm font-medium">{formatNumber(token.volume5m)}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="flex items-center gap-1">
+                        <Activity className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">1h</span>
+                      </div>
+                      <p className="text-sm font-medium">{formatNumber(token.volume1h)}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{formatNumber(token.volume24h)}</p>
+                      <p className="text-xs text-muted-foreground">24h Volume</p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{formatNumber(token.marketCap)}</p>
+                      <p className="text-xs text-muted-foreground">Market Cap</p>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{formatAge(token.age)}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyToClipboard(token.pairAddress);
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openExplorer(token.contractAddress || token.pairAddress, token.chainId);
+                        }}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <WatchlistSelector
+                        token={token}
+                        onAddToWatchlist={onAddToWatchlist}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Star className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTokenClick(token);
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !error && activeTab === 'search' && searchQuery && (!searchResults || searchResults.tokens.length === 0) && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">No tokens found matching your search.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !error && activeTab === 'trending' && trendingTokens.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">No trending tokens available.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
-}; 
+};
+
+// Utility function for debouncing
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+} 

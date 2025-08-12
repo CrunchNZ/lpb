@@ -1,4 +1,23 @@
 import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, Notification, globalShortcut } from 'electron';
+// Optional Sentry (main)
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const SentryMain = require('@sentry/electron/main');
+  if (process.env.VITE_SENTRY_DSN) {
+    SentryMain.init({
+      dsn: process.env.VITE_SENTRY_DSN,
+      environment: process.env.VITE_APP_ENV || process.env.NODE_ENV || 'production',
+      tracesSampleRate: 0.1,
+    });
+  }
+} catch {}
+// Optional: auto-updates in production
+let autoUpdater: any;
+try {
+  // Dynamically require to avoid bundling in dev
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  autoUpdater = require('electron-updater').autoUpdater;
+} catch {}
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -19,7 +38,6 @@ function createWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
     },
     icon: path.join(__dirname, '../assets/icon.png'),
@@ -30,10 +48,21 @@ function createWindow(): void {
 
   // Load the app
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    // In production, Vite outputs index.html into the dist folder packaged with Electron
+    // __dirname points to compiled js directory; index.html should be adjacent after packaging
+    const indexHtmlPath = path.join(__dirname, 'index.html');
+    const fallbackPath = path.join(__dirname, '../index.html');
+    if (fs.existsSync(indexHtmlPath)) {
+      mainWindow.loadFile(indexHtmlPath);
+    } else if (fs.existsSync(fallbackPath)) {
+      mainWindow.loadFile(fallbackPath);
+    } else {
+      // As a last resort, try loading from top-level dist
+      mainWindow.loadFile(path.join(process.cwd(), 'dist', 'index.html'));
+    }
   }
 
   // Show window when ready
@@ -223,6 +252,16 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+
+  // Auto-update in production
+  if (!isDev && autoUpdater && process.env.VITE_SENTRY_DSN) {
+    try {
+      autoUpdater.checkForUpdatesAndNotify();
+    } catch (e) {
+      // best-effort; avoid crashing main process
+      console.error('Auto update failed:', e);
+    }
+  }
 });
 
 app.on('window-all-closed', () => {
@@ -239,8 +278,8 @@ app.on('will-quit', () => {
 
 // Security: Prevent new window creation
 app.on('web-contents-created', (event, contents) => {
-  contents.on('new-window', (event, _navigationUrl) => {
-    event.preventDefault();
+  contents.setWindowOpenHandler(() => {
+    return { action: 'deny' };
   });
 });
 

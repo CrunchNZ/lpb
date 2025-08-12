@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Position } from '../../backend/database';
+import { Position } from '../../../backend/database';
 
 export interface PositionsState {
   positions: Position[];
@@ -61,14 +61,14 @@ const positionsSlice = createSlice({
       state.stats = calculateStats(state.positions);
     },
     updatePosition: (state, action: PayloadAction<{ id: string; updates: Partial<Position> }>) => {
-      const index = state.positions.findIndex(p => p.id === action.payload.id);
+      const index = state.positions.findIndex((p: Position) => p.id === action.payload.id);
       if (index !== -1) {
         state.positions[index] = { ...state.positions[index], ...action.payload.updates };
         state.stats = calculateStats(state.positions);
       }
     },
     removePosition: (state, action: PayloadAction<string>) => {
-      state.positions = state.positions.filter(p => p.id !== action.payload);
+      state.positions = state.positions.filter((p: Position) => p.id !== action.payload);
       state.stats = calculateStats(state.positions);
     },
     setSelectedPosition: (state, action: PayloadAction<string | null>) => {
@@ -81,28 +81,28 @@ const positionsSlice = createSlice({
       state.filters = initialState.filters;
     },
     closePosition: (state, action: PayloadAction<string>) => {
-      const position = state.positions.find(p => p.id === action.payload);
+      const position = state.positions.find((p: Position) => p.id === action.payload);
       if (position) {
         position.status = 'closed';
         state.stats = calculateStats(state.positions);
       }
     },
     pausePosition: (state, action: PayloadAction<string>) => {
-      const position = state.positions.find(p => p.id === action.payload);
+      const position = state.positions.find((p: Position) => p.id === action.payload);
       if (position) {
         position.status = 'pending';
         state.stats = calculateStats(state.positions);
       }
     },
     resumePosition: (state, action: PayloadAction<string>) => {
-      const position = state.positions.find(p => p.id === action.payload);
+      const position = state.positions.find((p: Position) => p.id === action.payload);
       if (position) {
         position.status = 'active';
         state.stats = calculateStats(state.positions);
       }
     },
     updatePositionPrice: (state, action: PayloadAction<{ id: string; currentPrice: number; pnl: number }>) => {
-      const position = state.positions.find(p => p.id === action.payload.id);
+      const position = state.positions.find((p: Position) => p.id === action.payload.id);
       if (position) {
         position.currentPrice = action.payload.currentPrice;
         position.pnl = action.payload.pnl;
@@ -115,8 +115,8 @@ const positionsSlice = createSlice({
 // Helper function to calculate stats from positions
 const calculateStats = (positions: Position[]) => {
   const totalPositions = positions.length;
-  const activePositions = positions.filter(p => p.status === 'active').length;
-  const closedPositions = positions.filter(p => p.status === 'closed').length;
+  const activePositions = positions.filter((p: Position) => p.status === 'active').length;
+  const closedPositions = positions.filter((p: Position) => p.status === 'closed').length;
   const totalValue = positions.reduce((sum, p) => sum + (p.amountA * p.currentPrice + p.amountB), 0);
   const totalPnl = positions.reduce((sum, p) => sum + p.pnl, 0);
   const averageApy = positions.length > 0

@@ -33,7 +33,7 @@ export interface UIState {
   };
   // Navigation state management
   navigation: {
-    activeTab: 'positions' | 'swap' | 'liquidity' | 'watchlists' | 'settings';
+    activeTab: 'positions' | 'swap' | 'liquidity' | 'watchlists' | 'settings' | 'token-detail';
     modalStack: Array<{
       id: string;
       component: string;
@@ -150,7 +150,7 @@ const uiSlice = createSlice({
       };
     },
     // Navigation actions
-    setActiveTab: (state, action: PayloadAction<'positions' | 'swap' | 'liquidity' | 'watchlists' | 'settings'>) => {
+    setActiveTab: (state, action: PayloadAction<'positions' | 'swap' | 'liquidity' | 'watchlists' | 'settings' | 'token-detail'>) => {
       state.navigation.activeTab = action.payload;
       state.navigation.navigationHistory.push({
         tab: action.payload,

@@ -1,7 +1,7 @@
 /**
- * Jupiter SDK Integration
+ * Jupiter API Integration (Free Tier)
  *
- * Handles all interactions with Jupiter aggregator including:
+ * Handles all interactions with Jupiter aggregator using the free tier API:
  * - Token swaps and route discovery
  * - Price quotes and slippage calculation
  * - Transaction signing and execution
@@ -9,7 +9,9 @@
  * - Real-time price monitoring
  */
 
-import { Connection, Keypair } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, Transaction, TransactionSignature } from '@solana/web3.js';
+import { jupiterConfig, jupiterRateLimiter, jupiterCache } from '../config/jupiter-config';
+import axios from 'axios';
 
 // Types for Jupiter integration
 export interface JupiterToken {
@@ -25,23 +27,12 @@ export interface JupiterRoute {
   id: string;
   inAmount: number;
   outAmount: number;
-  priceImpact: number;
-  marketInfos: JupiterMarketInfo[];
-  swapMode: 'ExactIn' | 'ExactOut';
+  priceImpactPct: number;
+  marketInfos: any[];
+  amount: number;
   slippageBps: number;
   otherAmountThreshold: number;
-  swapTransaction: string;
-}
-
-export interface JupiterMarketInfo {
-  id: string;
-  label: string;
-  inputMint: string;
-  outputMint: string;
-  notEnoughLiquidity: boolean;
-  minInAmount?: number;
-  maxInAmount?: number;
-  price: number;
+  swapMode: string;
 }
 
 export interface JupiterQuote {
@@ -58,46 +49,38 @@ export interface JupiterQuote {
   timeTaken: number;
 }
 
-export interface JupiterSwapRequest {
-  route: JupiterRoute;
-  userPublicKey: string;
-  wrapUnwrapSOL?: boolean;
-}
-
 export interface JupiterSwapResult {
   signature: string;
-  status: 'pending' | 'confirmed' | 'failed';
-  error?: string;
-  timestamp: Date;
+  status: 'success' | 'failed' | 'pending';
+  timestamp: number;
   inputAmount: number;
   outputAmount: number;
   priceImpact: number;
+  error?: string;
 }
 
 export interface JupiterConfig {
   rpcUrl: string;
-  apiKey?: string;
-  maxSlippage: number;
-  gasMultiplier: number;
-  retryAttempts: number;
+  commitment: 'processed' | 'confirmed' | 'finalized';
   timeoutMs: number;
 }
 
 /**
- * Jupiter Integration Class
+ * Jupiter API Integration Class
  *
  * Provides comprehensive integration with Jupiter aggregator
- * for token swaps and route optimization
+ * using the free tier API endpoints
  */
 export class JupiterIntegration {
   private connection: Connection;
   private config: JupiterConfig;
   private tokens: Map<string, JupiterToken> = new Map();
   private recentQuotes: Map<string, JupiterQuote> = new Map();
+  private isInitialized: boolean = false;
 
   constructor(config: JupiterConfig) {
     this.config = config;
-    this.connection = new Connection(config.rpcUrl, 'confirmed');
+    this.connection = new Connection(config.rpcUrl, config.commitment);
   }
 
   /**
@@ -106,61 +89,49 @@ export class JupiterIntegration {
    */
   async initialize(): Promise<void> {
     try {
-      // Test connection
-      const blockHeight = await this.connection.getBlockHeight();
-      console.log(`Jupiter: Connected to Solana network, block height: ${blockHeight}`);
-
       // Load token list
-      await this.loadTokens();
-
-      console.log(`Jupiter: Initialized with ${this.tokens.size} tokens`);
+      await this.loadTokenList();
+      
+      this.isInitialized = true;
+      console.log('Jupiter: Initialized with free tier API');
     } catch (error) {
-      throw new Error(`Failed to initialize Jupiter integration: ${error}`);
+      console.error('Failed to initialize Jupiter integration:', error);
+      throw new Error(`Failed to initialize Jupiter: ${error}`);
     }
   }
 
   /**
-   * Load available tokens from Jupiter
+   * Load token list from Jupiter API
    */
-  private async loadTokens(): Promise<void> {
+  private async loadTokenList(): Promise<void> {
     try {
-      // In a real implementation, this would fetch from Jupiter API
-      // For now, we'll create mock tokens for development
-      const mockTokens: JupiterToken[] = [
-        {
-          address: 'So11111111111111111111111111111111111111112',
-          symbol: 'SOL',
-          name: 'Solana',
-          decimals: 9,
-          logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-          tags: ['native'],
-        },
-        {
-          address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          symbol: 'USDC',
-          name: 'USD Coin',
-          decimals: 6,
-          logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
-          tags: ['stablecoin'],
-        },
-        {
-          address: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R',
-          symbol: 'RAY',
-          name: 'Raydium',
-          decimals: 6,
-          logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R/logo.png',
-          tags: ['defi'],
-        },
-      ];
+      // Check cache first
+      const cachedTokens = jupiterCache.get('token-list');
+      if (cachedTokens) {
+        this.tokens = new Map(cachedTokens);
+        console.log(`Jupiter: Loaded ${this.tokens.size} tokens from cache`);
+        return;
+      }
 
-      this.tokens.clear();
-      mockTokens.forEach(token => {
+      // Fetch token list from Jupiter API
+      const response = await axios.get(`${jupiterConfig.apiUrl}/v4/tokens`, {
+        timeout: jupiterConfig.timeoutMs,
+      });
+
+      const tokens: JupiterToken[] = response.data.tokens || [];
+      
+      // Convert to Map
+      tokens.forEach((token: JupiterToken) => {
         this.tokens.set(token.address, token);
       });
 
+      // Cache the token list
+      jupiterCache.set('token-list', Array.from(this.tokens.entries()), jupiterConfig.tokenListCacheTtlMs);
+
       console.log(`Jupiter: Loaded ${this.tokens.size} tokens`);
     } catch (error) {
-      throw new Error(`Failed to load tokens: ${error}`);
+      console.error('Failed to load token list:', error);
+      throw new Error(`Failed to load token list: ${error}`);
     }
   }
 
@@ -172,7 +143,7 @@ export class JupiterIntegration {
   }
 
   /**
-   * Get a specific token by address
+   * Get token by address
    */
   getToken(address: string): JupiterToken | undefined {
     return this.tokens.get(address);
@@ -182,13 +153,13 @@ export class JupiterIntegration {
    * Find tokens by symbol
    */
   findTokensBySymbol(symbol: string): JupiterToken[] {
-    return this.getTokens().filter(token =>
+    return Array.from(this.tokens.values()).filter((token: JupiterToken) =>
       token.symbol.toLowerCase().includes(symbol.toLowerCase())
     );
   }
 
   /**
-   * Get quote for a token swap
+   * Get quote for a token swap using Jupiter API
    */
   async getQuote(
     inputMint: string,
@@ -197,6 +168,19 @@ export class JupiterIntegration {
     slippageBps: number = 50
   ): Promise<JupiterQuote> {
     try {
+      // Check rate limiting
+      if (jupiterRateLimiter.isRateLimited('quote')) {
+        throw new Error('Rate limit exceeded for quote requests');
+      }
+
+      // Check cache first
+      const cacheKey = `quote-${inputMint}-${outputMint}-${amount}-${slippageBps}`;
+      const cachedQuote = jupiterCache.get(cacheKey);
+      if (cachedQuote) {
+        console.log('Jupiter: Returning cached quote');
+        return cachedQuote;
+      }
+
       // Validate tokens
       const inputToken = this.getToken(inputMint);
       const outputToken = this.getToken(outputMint);
@@ -205,67 +189,121 @@ export class JupiterIntegration {
         throw new Error('Invalid token addresses');
       }
 
-      // In a real implementation, this would call Jupiter API
-      // For now, we'll create a mock quote
-      const mockQuote: JupiterQuote = {
+      // Get quote from Jupiter API
+      const response = await axios.get(jupiterConfig.quoteApiUrl, {
+        params: {
+          inputMint,
+          outputMint,
+          amount: amount.toString(),
+          slippageBps,
+          onlyDirectRoutes: false,
+          asLegacyTransaction: false,
+        },
+        timeout: jupiterConfig.timeoutMs,
+      });
+
+      if (!response.data || !response.data.data) {
+        throw new Error('Invalid response from Jupiter API');
+      }
+
+      const quoteData = response.data.data;
+      
+      const jupiterQuote: JupiterQuote = {
         inputMint,
         outputMint,
-        inAmount: amount,
-        outAmount: this.calculateOutputAmount(amount, inputToken, outputToken),
-        otherAmountThreshold: 0,
-        swapMode: 'ExactIn',
+        inAmount: parseInt(quoteData.inAmount),
+        outAmount: parseInt(quoteData.outAmount),
+        otherAmountThreshold: parseInt(quoteData.otherAmountThreshold),
+        swapMode: quoteData.swapMode,
         slippageBps,
-        priceImpactPct: this.calculatePriceImpact(amount),
-        routePlan: this.generateMockRoute(inputMint, outputMint, amount),
-        contextSlot: await this.connection.getSlot(),
-        timeTaken: Math.random() * 100,
+        priceImpactPct: quoteData.priceImpactPct,
+        routePlan: quoteData.routePlan,
+        contextSlot: quoteData.contextSlot,
+        timeTaken: quoteData.timeTaken,
       };
 
       // Cache the quote
-      const quoteKey = `${inputMint}-${outputMint}-${amount}`;
-      this.recentQuotes.set(quoteKey, mockQuote);
+      jupiterCache.set(cacheKey, jupiterQuote, jupiterConfig.quoteCacheTtlMs);
+      this.recentQuotes.set(cacheKey, jupiterQuote);
 
       console.log(`Jupiter: Generated quote for ${inputToken.symbol} -> ${outputToken.symbol}`);
-      return mockQuote;
+      return jupiterQuote;
     } catch (error) {
+      console.error('Failed to get Jupiter quote:', error);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get quote: ${error.message}`);
+      }
       throw new Error(`Failed to get quote: ${error}`);
     }
   }
 
   /**
-   * Execute a token swap
+   * Execute a token swap using Jupiter API
    */
   async executeSwap(
     quote: JupiterQuote,
     wallet: Keypair
   ): Promise<JupiterSwapResult> {
     try {
+      // Check rate limiting
+      if (jupiterRateLimiter.isRateLimited('swap')) {
+        throw new Error('Rate limit exceeded for swap requests');
+      }
+
       // Validate quote
       if (!quote.routePlan || quote.routePlan.length === 0) {
         throw new Error('Invalid quote: no route plan');
       }
 
-      // In a real implementation, this would:
-      // 1. Create the swap transaction
-      // 2. Sign with wallet
-      // 3. Send to network
-      // 4. Wait for confirmation
+      // Get swap transaction from Jupiter API
+      const response = await axios.post(`${jupiterConfig.apiUrl}/v6/swap`, {
+        quoteResponse: {
+          inputMint: quote.inputMint,
+          outputMint: quote.outputMint,
+          inAmount: quote.inAmount.toString(),
+          outAmount: quote.outAmount.toString(),
+          otherAmountThreshold: quote.otherAmountThreshold.toString(),
+          swapMode: quote.swapMode,
+          slippageBps: quote.slippageBps,
+          routePlan: quote.routePlan,
+        },
+        userPublicKey: wallet.publicKey.toString(),
+        wrapUnwrapSOL: true,
+      }, {
+        timeout: jupiterConfig.timeoutMs,
+      });
 
-      // Mock transaction for development
-      const transaction = await this.simulateSwapTransaction(wallet);
+      if (!response.data || !response.data.swapTransaction) {
+        throw new Error('Invalid swap response from Jupiter API');
+      }
+
+      // Deserialize and sign the transaction
+      const swapTransaction = Transaction.from(Buffer.from(response.data.swapTransaction, 'base64'));
+      swapTransaction.sign(wallet);
+
+      // Send the transaction
+      const signature = await this.connection.sendTransaction(swapTransaction, [wallet], {
+        skipPreflight: false,
+        preflightCommitment: this.config.commitment,
+      });
+
+      // Wait for confirmation
+      const confirmation = await this.connection.confirmTransaction(signature, this.config.commitment);
 
       const result: JupiterSwapResult = {
-        signature: transaction.signature,
-        status: transaction.status,
-        timestamp: transaction.timestamp,
+        signature,
+        status: confirmation.value.err ? 'failed' : 'success',
+        timestamp: Date.now(),
         inputAmount: quote.inAmount,
         outputAmount: quote.outAmount,
         priceImpact: quote.priceImpactPct,
+        error: confirmation.value.err ? JSON.stringify(confirmation.value.err) : undefined,
       };
 
       console.log(`Jupiter: Executed swap ${result.signature}`);
       return result;
     } catch (error) {
+      console.error('Failed to execute Jupiter swap:', error);
       throw new Error(`Failed to execute swap: ${error}`);
     }
   }
@@ -280,28 +318,71 @@ export class JupiterIntegration {
     slippageBps: number = 50
   ): Promise<JupiterRoute[]> {
     try {
-      const quote = await this.getQuote(inputMint, outputMint, amount, slippageBps);
+      // Check rate limiting
+      if (jupiterRateLimiter.isRateLimited('routes')) {
+        throw new Error('Rate limit exceeded for route requests');
+      }
 
-      // In a real implementation, this would return multiple route options
-      // For now, we'll return the single route from the quote
-      return quote.routePlan;
+      const response = await axios.get(`${jupiterConfig.apiUrl}/v6/quote`, {
+        params: {
+          inputMint,
+          outputMint,
+          amount: amount.toString(),
+          slippageBps,
+          onlyDirectRoutes: false,
+          asLegacyTransaction: false,
+        },
+        timeout: jupiterConfig.timeoutMs,
+      });
+
+      if (!response.data || !response.data.data) {
+        throw new Error('Invalid response from Jupiter API');
+      }
+
+      const routes: JupiterRoute[] = response.data.data.routes || [];
+      return routes;
     } catch (error) {
+      console.error('Failed to get Jupiter routes:', error);
       throw new Error(`Failed to get routes: ${error}`);
     }
   }
 
   /**
-   * Get price for a token pair
+   * Get token price from Jupiter API
    */
-  async getPrice(
-    inputMint: string,
-    outputMint: string,
-    amount: number = 1
-  ): Promise<number> {
+  async getTokenPrice(tokenMint: string): Promise<number> {
     try {
-      const quote = await this.getQuote(inputMint, outputMint, amount);
-      return quote.outAmount / quote.inAmount;
+      // Check cache first
+      const cacheKey = `price-${tokenMint}`;
+      const cachedPrice = jupiterCache.get(cacheKey);
+      if (cachedPrice) {
+        return cachedPrice;
+      }
+
+      // Check rate limiting
+      if (jupiterRateLimiter.isRateLimited('price')) {
+        throw new Error('Rate limit exceeded for price requests');
+      }
+
+      const response = await axios.get(jupiterConfig.priceApiUrl, {
+        params: {
+          ids: tokenMint,
+        },
+        timeout: jupiterConfig.timeoutMs,
+      });
+
+      if (!response.data || !response.data.data || !response.data.data[tokenMint]) {
+        throw new Error('Invalid price response from Jupiter API');
+      }
+
+      const price = response.data.data[tokenMint].price;
+      
+      // Cache the price
+      jupiterCache.set(cacheKey, price, jupiterConfig.priceCacheTtlMs);
+
+      return price;
     } catch (error) {
+      console.error('Failed to get token price:', error);
       throw new Error(`Failed to get price: ${error}`);
     }
   }
@@ -309,165 +390,75 @@ export class JupiterIntegration {
   /**
    * Get recent quotes
    */
-  getRecentQuotes(): JupiterQuote[] {
-    return Array.from(this.recentQuotes.values());
+  getRecentQuotes(): Map<string, JupiterQuote> {
+    return new Map(this.recentQuotes);
   }
 
   /**
-   * Clear old quotes (called periodically)
+   * Clear recent quotes
    */
-  clearOldQuotes(maxAgeMs: number = 5 * 60 * 1000): void {
-    const now = Date.now();
-    for (const [key, quote] of this.recentQuotes.entries()) {
-      if (now - quote.timeTaken > maxAgeMs) {
-        this.recentQuotes.delete(key);
-      }
-    }
+  clearRecentQuotes(): void {
+    this.recentQuotes.clear();
   }
 
   /**
-   * Calculate output amount based on token prices
+   * Check if connected
    */
-  private calculateOutputAmount(
-    inputAmount: number,
-    inputToken: JupiterToken,
-    outputToken: JupiterToken
-  ): number {
-    // Mock price calculation based on token symbols
-    const priceMap: Record<string, number> = {
-      'SOL': 100, // SOL = $100
-      'USDC': 1,  // USDC = $1
-      'RAY': 0.5,  // RAY = $0.5
-    };
-
-    const inputPrice = priceMap[inputToken.symbol] || 1;
-    const outputPrice = priceMap[outputToken.symbol] || 1;
-
-    return (inputAmount * inputPrice) / outputPrice;
-  }
-
-  /**
-   * Calculate price impact based on trade size
-   */
-  private calculatePriceImpact(amount: number): number {
-    // Mock price impact calculation
-    // Larger trades have higher price impact
-    return Math.min(amount / 10000 * 0.1, 5); // Max 5% impact
-  }
-
-  /**
-   * Generate mock route for development
-   */
-  private generateMockRoute(
-    inputMint: string,
-    outputMint: string,
-    amount: number
-  ): JupiterRoute[] {
-    const mockMarket: JupiterMarketInfo = {
-      id: 'mock-market-1',
-      label: 'Mock DEX',
-      inputMint,
-      outputMint,
-      notEnoughLiquidity: false,
-      price: 1.0,
-    };
-
-    return [{
-      id: `route-${Date.now()}`,
-      inAmount: amount,
-      outAmount: this.calculateOutputAmount(amount,
-        this.getToken(inputMint)!,
-        this.getToken(outputMint)!
-      ),
-      priceImpact: this.calculatePriceImpact(amount),
-      marketInfos: [mockMarket],
-      swapMode: 'ExactIn',
-      slippageBps: 50,
-      otherAmountThreshold: 0,
-      swapTransaction: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    }];
-  }
-
-  /**
-   * Simulate a swap transaction (for development)
-   */
-  private async simulateSwapTransaction(_wallet: Keypair): Promise<JupiterSwapResult> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-
-    // 5% chance of failure for testing
-    if (Math.random() < 0.05) {
-      throw new Error('Swap transaction failed (simulated)');
-    }
-
-    return {
-      signature: `swap-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      status: 'confirmed',
-      timestamp: new Date(),
-      inputAmount: 0,
-      outputAmount: 0,
-      priceImpact: 0,
-    };
-  }
-
-  /**
-   * Get Jupiter statistics
-   */
-  getStats(): {
-    totalTokens: number;
-    totalQuotes: number;
-    averagePriceImpact: number;
-  } {
-    const quotes = this.getRecentQuotes();
-    const averagePriceImpact = quotes.length > 0
-      ? quotes.reduce((sum, quote) => sum + quote.priceImpactPct, 0) / quotes.length
-      : 0;
-
-    return {
-      totalTokens: this.tokens.size,
-      totalQuotes: quotes.length,
-      averagePriceImpact,
-    };
-  }
-
-  /**
-   * Refresh token list
-   */
-  async refreshTokens(): Promise<void> {
-    await this.loadTokens();
+  isConnected(): boolean {
+    return this.isInitialized;
   }
 
   /**
    * Get connection status
    */
-  async getConnectionStatus(): Promise<{
-    connected: boolean;
-    blockHeight: number;
-    latency: number;
-  }> {
-    try {
-      const startTime = Date.now();
-      const blockHeight = await this.connection.getBlockHeight();
-      const latency = Date.now() - startTime;
+  getConnectionStatus(): { connected: boolean; lastCheck: number } {
+    return {
+      connected: this.isInitialized,
+      lastCheck: Date.now(),
+    };
+  }
 
-      return {
-        connected: true,
-        blockHeight,
-        latency,
-      };
-    } catch (error) {
-      return {
-        connected: false,
-        blockHeight: 0,
-        latency: 0,
-      };
+  /**
+   * Get integration stats
+   */
+  getStats(): {
+    tokensLoaded: number;
+    recentQuotes: number;
+    lastQuoteTime: number | null;
+    cacheSize: number;
+    rateLimitRemaining: number;
+  } {
+    return {
+      tokensLoaded: this.tokens.size,
+      recentQuotes: this.recentQuotes.size,
+      lastQuoteTime: this.recentQuotes.size > 0 ? Date.now() : null,
+      cacheSize: jupiterCache.getSize(),
+      rateLimitRemaining: jupiterRateLimiter.getRemainingRequests('quote'),
+    };
+  }
+
+  /**
+   * Clear old quotes
+   */
+  clearOldQuotes(): void {
+    const now = Date.now();
+    const maxAge = 5 * 60 * 1000; // 5 minutes
+
+    for (const [key, quote] of this.recentQuotes.entries()) {
+      if (now - quote.timeTaken > maxAge) {
+        this.recentQuotes.delete(key);
+      }
     }
   }
 }
 
-/**
- * Factory function to create Jupiter integration instance
- */
-export function createJupiterIntegration(config: JupiterConfig): JupiterIntegration {
-  return new JupiterIntegration(config);
+// Factory function to create Jupiter integration
+export function getJupiterIntegration(config?: JupiterConfig): JupiterIntegration {
+  const finalConfig = config || {
+    rpcUrl: jupiterConfig.rpcUrl,
+    commitment: jupiterConfig.commitment,
+    timeoutMs: jupiterConfig.timeoutMs,
+  };
+
+  return new JupiterIntegration(finalConfig);
 }

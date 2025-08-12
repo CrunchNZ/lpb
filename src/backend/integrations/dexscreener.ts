@@ -14,6 +14,8 @@ export interface TokenData {
   priceChange1h: number;
   priceChange6h: number;
   volume24h: number;
+  volume1h: number;
+  volume5m: number;
   marketCap: number;
   liquidity: number;
   age: number; // in hours
@@ -22,24 +24,67 @@ export interface TokenData {
   pairAddress: string;
   chainId: string;
   dexId: string;
+  contractAddress?: string;
 }
 
 export interface SearchFilters {
   chainId?: string;
   minVolume?: number;
-  maxVolume?: number;
-  minAge?: number; // in hours
-  maxAge?: number;
   minMarketCap?: number;
-  maxMarketCap?: number;
-  minLiquidity?: number;
-  trending?: 'gainers' | 'losers' | 'new';
+  trending?: string;
 }
 
 export interface SearchResult {
   tokens: TokenData[];
   totalCount: number;
   hasMore: boolean;
+}
+
+export interface DexScreenerPair {
+  chainId: string;
+  dexId: string;
+  url: string;
+  pairAddress: string;
+  baseToken: {
+    address: string;
+    name: string;
+    symbol: string;
+  };
+  quoteToken: {
+    address: string;
+    name: string;
+    symbol: string;
+  };
+  priceNative: string;
+  priceUsd: string;
+  txns: {
+    h24: {
+      buys: number;
+      sells: number;
+    };
+  };
+  volume: {
+    h24: number;
+    h6: number;
+    h1: number;
+    m5?: number; // 5-minute volume (may not be available in all API responses)
+  };
+  priceChange: {
+    h24: number;
+    h6: number;
+    h1: number;
+  };
+  liquidity: {
+    usd: number;
+    base: number;
+    quote: number;
+  };
+  fdv: number;
+  pairCreatedAt: number;
+}
+
+export interface DexScreenerResponse {
+  pairs: DexScreenerPair[];
 }
 
 class DexscreenerAPI {
@@ -55,6 +100,15 @@ class DexscreenerAPI {
    * Search for tokens with filters
    */
   async searchTokens(query: string, filters: SearchFilters = {}): Promise<SearchResult> {
+    // Validate query length to avoid 400 errors
+    if (!query || query.trim().length < 2) {
+      return {
+        tokens: [],
+        totalCount: 0,
+        hasMore: false,
+      };
+    }
+
     const cacheKey = this.generateCacheKey(query, filters);
     const cached = this.getCachedResult(cacheKey);
     if (cached) {
@@ -71,7 +125,7 @@ class DexscreenerAPI {
         throw new Error(`Dexscreener API error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data: DexScreenerResponse = await response.json();
       const tokens = this.processSearchResults(data.pairs || [], filters);
 
       const result: SearchResult = {
@@ -108,8 +162,8 @@ class DexscreenerAPI {
         throw new Error(`Dexscreener API error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
-      const token = this.processTokenData(data.pair);
+      const data: DexScreenerResponse = await response.json();
+      const token = this.processTokenData(data.pairs?.[0]);
 
       if (token) {
         this.cacheResult(cacheKey, token);
@@ -125,13 +179,8 @@ class DexscreenerAPI {
   /**
    * Get trending tokens with filters
    */
-  async getTrendingTokens(filters: SearchFilters | string = {}): Promise<TokenData[]> {
-    // Handle string parameter for backward compatibility
-    const searchFilters: SearchFilters = typeof filters === 'string'
-      ? { trending: filters as 'gainers' | 'losers' | 'new' }
-      : filters;
-
-    const cacheKey = `trending_${JSON.stringify(searchFilters)}`;
+  async getTrendingTokens(filters: SearchFilters = {}): Promise<TokenData[]> {
+    const cacheKey = `trending_${JSON.stringify(filters)}`;
     const cached = this.getCachedResult(cacheKey);
     if (cached) {
       return cached as TokenData[];
@@ -140,101 +189,35 @@ class DexscreenerAPI {
     await this.rateLimit();
 
     try {
-      // For demo purposes, return mock trending data
-      // In production, this would call the actual Dexscreener trending endpoint
-      const mockTokens: TokenData[] = [
-        {
-          symbol: 'SOL',
-          name: 'Solana',
-          price: 20.5,
-          priceChange24h: 5.2,
-          priceChange1h: 1.1,
-          priceChange6h: 3.4,
-          volume24h: 50000000,
-          marketCap: 1000000000,
-          liquidity: 25000000,
-          age: 48,
-          holders: 50000,
-          transactions24h: 15000,
-          pairAddress: '0x1234567890abcdef',
-          chainId: 'solana',
-          dexId: 'raydium',
-        },
-        {
-          symbol: 'BONK',
-          name: 'Bonk',
-          price: 0.0006,
-          priceChange24h: 15.7,
-          priceChange1h: 2.3,
-          priceChange6h: 8.9,
-          volume24h: 1200000,
-          marketCap: 500000,
-          liquidity: 150000,
-          age: 24,
-          holders: 1250,
-          transactions24h: 850,
-          pairAddress: '0xabcdef1234567890',
-          chainId: 'solana',
-          dexId: 'raydium',
-        },
-        {
-          symbol: 'RAY',
-          name: 'Raydium',
-          price: 15.2,
-          priceChange24h: 3.8,
-          priceChange1h: 0.5,
-          priceChange6h: 2.1,
-          volume24h: 8000000,
-          marketCap: 300000000,
-          liquidity: 5000000,
-          age: 72,
-          holders: 8000,
-          transactions24h: 1200,
-          pairAddress: '0xraydium123456',
-          chainId: 'solana',
-          dexId: 'raydium',
-        },
-      ];
+      // Get trending tokens from multiple chains
+      const chains = filters.chainId ? [filters.chainId] : ['solana', 'ethereum', 'bsc'];
+      const allTokens: TokenData[] = [];
 
-      // Apply filters
-      let filteredTokens = mockTokens.filter(token => this.applyFilters(token, searchFilters));
+      for (const chain of chains) {
+        const url = `${this.baseUrl}/tokens/${chain}`;
+        const response = await fetch(url);
 
-      // Apply trending filter if specified
-      if (searchFilters.trending) {
-        filteredTokens = filteredTokens.filter(token => {
-          switch (searchFilters.trending) {
-            case 'gainers':
-              return token.priceChange24h > 0;
-            case 'losers':
-              return token.priceChange24h < 0;
-            case 'new':
-              return token.age < 24; // Less than 24 hours old
-            default:
-              return true;
-          }
-        });
-
-        // Sort by price change for gainers/losers
-        if (searchFilters.trending === 'gainers' || searchFilters.trending === 'losers') {
-          filteredTokens.sort((a, b) => {
-            if (searchFilters.trending === 'gainers') {
-              return b.priceChange24h - a.priceChange24h;
-            } else {
-              return a.priceChange24h - b.priceChange24h;
-            }
-          });
-        }
-
-        // Limit to 2 tokens for gainers test
-        if (searchFilters.trending === 'gainers') {
-          filteredTokens = filteredTokens.slice(0, 2);
+        if (response.ok) {
+          const data: DexScreenerResponse = await response.json();
+          const tokens = this.processSearchResults(data.pairs || [], filters);
+          allTokens.push(...tokens);
         }
       }
+
+      // Sort by volume and apply filters
+      const filteredTokens = allTokens
+        .filter(token => {
+          if (filters.minVolume && token.volume24h < filters.minVolume) return false;
+          if (filters.minMarketCap && token.marketCap < filters.minMarketCap) return false;
+          return true;
+        })
+        .sort((a, b) => b.volume24h - a.volume24h)
+        .slice(0, 50); // Top 50 trending tokens
 
       this.cacheResult(cacheKey, filteredTokens);
       return filteredTokens;
     } catch (error) {
-      console.error('Dexscreener trending error:', error);
+      console.error('Dexscreener trending tokens error:', error);
       throw new Error(`Failed to get trending tokens: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -252,213 +235,139 @@ class DexscreenerAPI {
     await this.rateLimit();
 
     try {
-      // For demo purposes, return mock token data
-      // In production, this would search for the specific token
-      const mockTokenData: Record<string, TokenData> = {
-        'SOL': {
-          symbol: 'SOL',
-          name: 'Solana',
-          price: 20.5,
-          priceChange24h: 5.2,
-          priceChange1h: 1.1,
-          priceChange6h: 3.4,
-          volume24h: 50000000,
-          marketCap: 1000000000,
-          liquidity: 25000000,
-          age: 48,
-          holders: 50000,
-          transactions24h: 15000,
-          pairAddress: '0x1234567890abcdef',
-          chainId: 'solana',
-          dexId: 'raydium',
-        },
-        'BONK': {
-          symbol: 'BONK',
-          name: 'Bonk',
-          price: 0.0006,
-          priceChange24h: 15.7,
-          priceChange1h: 2.3,
-          priceChange6h: 8.9,
-          volume24h: 1200000,
-          marketCap: 500000,
-          liquidity: 150000,
-          age: 24,
-          holders: 1250,
-          transactions24h: 850,
-          pairAddress: '0xabcdef1234567890',
-          chainId: 'solana',
-          dexId: 'raydium',
-        },
-        'RAY': {
-          symbol: 'RAY',
-          name: 'Raydium',
-          price: 15.2,
-          priceChange24h: 3.8,
-          priceChange1h: 0.5,
-          priceChange6h: 2.1,
-          volume24h: 8000000,
-          marketCap: 300000000,
-          liquidity: 5000000,
-          age: 72,
-          holders: 8000,
-          transactions24h: 1200,
-          pairAddress: '0xraydium123456',
-          chainId: 'solana',
-          dexId: 'raydium',
-        },
-        'JUP': {
-          symbol: 'JUP',
-          name: 'Jupiter',
-          price: 8.9,
-          priceChange24h: 12.3,
-          priceChange1h: 1.8,
-          priceChange6h: 6.7,
-          volume24h: 15000000,
-          marketCap: 200000000,
-          liquidity: 3000000,
-          age: 36,
-          holders: 4500,
-          transactions24h: 950,
-          pairAddress: '0xjupiter123456',
-          chainId: 'solana',
-          dexId: 'raydium',
-        },
-      };
+      // Search for the specific token
+      const searchResult = await this.searchTokens(symbol, {});
+      const token = searchResult.tokens.find(t => 
+        t.symbol.toLowerCase() === symbol.toLowerCase()
+      );
 
-      const tokenData = mockTokenData[symbol.toUpperCase()];
-      if (tokenData) {
-        this.cacheResult(cacheKey, tokenData);
-        return tokenData;
+      if (token) {
+        this.cacheResult(cacheKey, token);
       }
 
-      return null;
+      return token || null;
     } catch (error) {
-      console.error('Dexscreener token data error:', error);
-      throw new Error(`Failed to get token data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Dexscreener get token data error:', error);
+      return null;
     }
   }
 
   /**
-   * Rate limiting implementation
+   * Get liquidity pools for a specific token
    */
-  private async rateLimit(): Promise<void> {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-
-    if (timeSinceLastRequest < this.rateLimitDelay) {
-      await new Promise(resolve => setTimeout(resolve, this.rateLimitDelay - timeSinceLastRequest));
+  async getTokenPools(tokenAddress: string, chainId: string = 'solana'): Promise<TokenData[]> {
+    const cacheKey = `token_pools_${chainId}_${tokenAddress}`;
+    const cached = this.getCachedResult(cacheKey);
+    if (cached) {
+      return cached as TokenData[];
     }
 
-    this.lastRequestTime = Date.now();
+    await this.rateLimit();
+
+    try {
+      const url = `${this.baseUrl}/tokens/${chainId}/${tokenAddress}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Dexscreener API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data: DexScreenerResponse = await response.json();
+      const pools = this.processSearchResults(data.pairs || [], {});
+
+      this.cacheResult(cacheKey, pools);
+      return pools;
+    } catch (error) {
+      console.error('Dexscreener get token pools error:', error);
+      return [];
+    }
   }
 
-  /**
-   * Build search URL with filters
-   */
   private buildSearchUrl(query: string, filters: SearchFilters): string {
     const params = new URLSearchParams();
-    params.append('q', query);
-
+    
+    if (query.trim()) {
+      params.append('q', query.trim());
+    }
+    
+    // Ensure chainId is properly formatted for DexScreener API
     if (filters.chainId) {
-      params.append('chainId', filters.chainId);
+      // DexScreener expects lowercase chain IDs
+      const normalizedChainId = filters.chainId.toLowerCase();
+      params.append('chainId', normalizedChainId);
     }
 
-    return `${this.baseUrl}/search/?${params.toString()}`;
+    return `${this.baseUrl}/search?${params.toString()}`;
   }
 
-  /**
-   * Process search results and apply filters
-   */
-  private processSearchResults(pairs: any[], filters: SearchFilters): TokenData[] {
-    return pairs
-      .map(pair => this.processTokenData(pair))
-      .filter((token): token is TokenData => token !== null && this.applyFilters(token, filters))
-      .slice(0, 30); // API limit
+  private processSearchResults(pairs: DexScreenerPair[], filters: SearchFilters): TokenData[] {
+    const filteredPairs = pairs.filter(pair => {
+      // Apply chain filter first
+      if (filters.chainId) {
+        const expectedChainId = filters.chainId.toLowerCase();
+        const actualChainId = pair.chainId.toLowerCase();
+        
+        if (actualChainId !== expectedChainId) {
+          return false;
+        }
+      }
+      
+      // Apply volume filter
+      if (filters.minVolume && pair.volume.h24 < filters.minVolume) {
+        return false;
+      }
+      
+      // Apply market cap filter
+      if (filters.minMarketCap && pair.fdv < filters.minMarketCap) {
+        return false;
+      }
+      
+      return true;
+    });
+
+    const tokens = filteredPairs
+      .map(pair => this.convertPairToTokenData(pair))
+      .filter(Boolean) as TokenData[];
+    
+    return tokens;
   }
 
-  /**
-   * Process individual token data
-   */
-  private processTokenData(pair: any): TokenData | null {
-    if (!pair || !pair.baseToken || !pair.priceUsd) {
-      return null;
-    }
+  private processTokenData(pair?: DexScreenerPair): TokenData | null {
+    if (!pair) return null;
+    return this.convertPairToTokenData(pair);
+  }
 
-    // const now = Date.now();
-    const pairAge = pair.pairAge ? parseFloat(pair.pairAge) : 0;
-    const ageHours = pairAge / (1000 * 60 * 60); // Convert to hours
+  private convertPairToTokenData(pair: DexScreenerPair): TokenData {
+    const now = Date.now();
+    const ageHours = (now - pair.pairCreatedAt) / (1000 * 60 * 60);
 
     return {
-      symbol: pair.baseToken.symbol || 'UNKNOWN',
-      name: pair.baseToken.name || pair.baseToken.symbol || 'Unknown Token',
+      symbol: pair.baseToken.symbol,
+      name: pair.baseToken.name,
       price: parseFloat(pair.priceUsd) || 0,
-      priceChange24h: parseFloat(pair.priceChange?.h24 || '0') || 0,
-      priceChange1h: parseFloat(pair.priceChange?.h1 || '0') || 0,
-      priceChange6h: parseFloat(pair.priceChange?.h6 || '0') || 0,
-      volume24h: parseFloat(pair.volume?.h24 || '0') || 0,
-      marketCap: parseFloat(pair.marketCap || '0') || 0,
-      liquidity: parseFloat(pair.liquidity?.usd || '0') || 0,
-      age: ageHours,
-      holders: parseInt(pair.holders || '0') || 0,
-      transactions24h: parseInt(pair.txns?.h24 || '0') || 0,
-      pairAddress: pair.pairAddress || '',
-      chainId: pair.chainId || 'solana',
-      dexId: pair.dexId || 'unknown',
+      priceChange24h: pair.priceChange.h24 || 0,
+      priceChange1h: pair.priceChange.h1 || 0,
+      priceChange6h: pair.priceChange.h6 || 0,
+      volume24h: pair.volume.h24 || 0,
+      volume1h: pair.volume.h1 || 0,
+      volume5m: pair.volume.m5 || (pair.volume.h1 ? pair.volume.h1 / 12 : 0), // Use actual 5m data or estimate
+      marketCap: pair.fdv || 0,
+      liquidity: pair.liquidity.usd || 0,
+      age: Math.max(0, ageHours),
+      holders: 0, // Not available in DexScreener API
+      transactions24h: (pair.txns.h24.buys + pair.txns.h24.sells) || 0,
+      pairAddress: pair.pairAddress,
+      chainId: pair.chainId,
+      dexId: pair.dexId,
+      contractAddress: pair.baseToken.address,
     };
   }
 
-  /**
-   * Apply filters to token data
-   */
-  private applyFilters(token: TokenData, filters: SearchFilters): boolean {
-    // Enforce minimum market cap filter
-    if (token.marketCap < 150000) {
-      return false;
-    }
-
-    if (filters.minVolume && token.volume24h < filters.minVolume) {
-      return false;
-    }
-
-    if (filters.maxVolume && token.volume24h > filters.maxVolume) {
-      return false;
-    }
-
-    if (filters.minAge && token.age < filters.minAge) {
-      return false;
-    }
-
-    if (filters.maxAge && token.age > filters.maxAge) {
-      return false;
-    }
-
-    if (filters.minMarketCap && token.marketCap < filters.minMarketCap) {
-      return false;
-    }
-
-    if (filters.maxMarketCap && token.marketCap > filters.maxMarketCap) {
-      return false;
-    }
-
-    if (filters.minLiquidity && token.liquidity < filters.minLiquidity) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Generate cache key for search results
-   */
   private generateCacheKey(query: string, filters: SearchFilters): string {
-    const filterStr = JSON.stringify(filters);
-    return `search_${query}_${filterStr}`;
+    return `search_${query}_${JSON.stringify(filters)}`;
   }
 
-  /**
-   * Get cached result if valid
-   */
-  private getCachedResult<T>(key: string): T | null {
+  private getCachedResult(key: string): any | null {
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
       return cached.data;
@@ -466,18 +375,28 @@ class DexscreenerAPI {
     return null;
   }
 
-  /**
-   * Cache result with timestamp
-   */
-  private cacheResult<T>(key: string, data: T): void {
+  private cacheResult(key: string, data: any): void {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
     });
   }
 
+  private async rateLimit(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    
+    if (timeSinceLastRequest < this.rateLimitDelay) {
+      await new Promise(resolve => 
+        setTimeout(resolve, this.rateLimitDelay - timeSinceLastRequest)
+      );
+    }
+    
+    this.lastRequestTime = Date.now();
+  }
+
   /**
-   * Clear cache (useful for testing)
+   * Clear the cache
    */
   clearCache(): void {
     this.cache.clear();
@@ -486,25 +405,24 @@ class DexscreenerAPI {
   /**
    * Get cache statistics
    */
-  getCacheStats(): { size: number; keys: string[] } {
+  getCacheStats(): { size: number; entries: number; keys: string[] } {
     return {
       size: this.cache.size,
+      entries: this.cache.size,
       keys: Array.from(this.cache.keys()),
     };
   }
 }
 
 // Export singleton instance
-let dexScreenerInstance: DexscreenerAPI | null = null;
+let dexscreenerInstance: DexscreenerAPI | null = null;
 
-export function getDexScreenerAPI(db?: DatabaseManager): DexscreenerAPI {
-  if (!dexScreenerInstance) {
+export function getDexScreenerAPI(db: DatabaseManager): DexscreenerAPI {
+  if (!dexscreenerInstance) {
     if (!db) {
       throw new Error('DatabaseManager is required for DexScreenerAPI initialization');
     }
-    dexScreenerInstance = new DexscreenerAPI(db);
+    dexscreenerInstance = new DexscreenerAPI(db);
   }
-  return dexScreenerInstance;
+  return dexscreenerInstance;
 }
-
-export { DexscreenerAPI };

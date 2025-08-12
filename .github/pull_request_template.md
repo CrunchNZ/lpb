@@ -1,21 +1,23 @@
 ## Description
-Brief description of the changes made in this PR.
+Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context.
 
-## Type of Change
+Fixes # (issue)
+
+## Type of change
+Please delete options that are not relevant.
+
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Accessibility improvement
+- [ ] This change requires a documentation update
 
-## Testing
-- [ ] All existing tests pass
-- [ ] New tests added for new functionality
-- [ ] Manual testing completed
-- [ ] Accessibility testing completed
+## How Has This Been Tested?
+Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration.
 
-## Checklist
+- [ ] Test A
+- [ ] Test B
+
+## Checklist:
 - [ ] My code follows the style guidelines of this project
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
@@ -29,4 +31,4 @@ Brief description of the changes made in this PR.
 Add screenshots to help explain your changes.
 
 ## Additional Notes
-Any additional information that reviewers should know about this PR. 
+Any additional information that reviewers should know about this change. 

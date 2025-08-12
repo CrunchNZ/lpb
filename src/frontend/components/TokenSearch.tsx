@@ -4,15 +4,16 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Filter, TrendingUp, TrendingDown, Clock, DollarSign } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Slider } from './ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { useTheme } from '../store/hooks';
-import { TokenData, SearchFilters } from '../../backend/integrations/dexscreener';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Search, Filter, Copy, ExternalLink, TrendingUp, TrendingDown, Clock, Users, Activity, Eye, Zap, Star } from 'lucide-react';
+import { TokenData, SearchFilters } from '@/backend/integrations/dexscreener';
+import { dexscreenerService } from '../services/dexscreenerService';
+import { TokenDetailView } from './TokenDetailView';
+import { WatchlistSelector } from './WatchlistSelector';
 
 interface TokenSearchProps {
   onTokenSelect?: (token: TokenData) => void;
@@ -25,26 +26,25 @@ export const TokenSearch: React.FC<TokenSearchProps> = ({
   onAddToWatchlist,
   watchlists = []
 }) => {
-  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<SearchFilters>({
-    chainId: 'solana',
-    minVolume: 1000000, // $1M default
-    minMarketCap: 150000 // $150K minimum
-  });
   const [tokens, setTokens] = useState<TokenData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  
-  // Infinite scroll state
+  const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
+  const [filters, setFilters] = useState<SearchFilters>({
+    chainId: 'solana',
+    minVolume: 100000,
+    minMarketCap: 150000,
+  });
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'volume' | 'marketCap' | 'priceChange24h' | 'age'>('volume');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const lastTokenRef = useRef<HTMLTableRowElement | null>(null);
 
-  // Debounced search
   const debouncedSearch = useCallback(
     debounce(async (query: string, filters: SearchFilters, resetPage: boolean = true) => {
       if (!query.trim()) {
@@ -63,16 +63,16 @@ export const TokenSearch: React.FC<TokenSearchProps> = ({
       }
 
       try {
-        // This would be replaced with actual API call
-        const mockTokens: TokenData[] = generateMockTokens(query, filters);
+        // Use real API call instead of mock data
+        const result = await dexscreenerService.searchTokens(query, filters);
         
         if (resetPage) {
-          setTokens(mockTokens);
+          setTokens(result.tokens);
         } else {
-          setTokens(prev => [...prev, ...mockTokens]);
+          setTokens(prev => [...prev, ...result.tokens]);
         }
         
-        setHasMore(mockTokens.length >= 20); // Assume 20 tokens per page
+        setHasMore(result.hasMore);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Search failed');
         setTokens([]);
@@ -127,6 +127,80 @@ export const TokenSearch: React.FC<TokenSearchProps> = ({
     if (hours < 24) return `${Math.floor(hours)}h`;
     return `${Math.floor(hours / 24)}d`;
   };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedAddress(text);
+      setTimeout(() => setCopiedAddress(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
+  };
+
+  const openExplorer = (address: string, chainId: string) => {
+    let explorerUrl = '';
+    switch (chainId) {
+      case 'solana':
+        explorerUrl = `https://solscan.io/token/${address}`;
+        break;
+      case 'ethereum':
+        explorerUrl = `https://etherscan.io/token/${address}`;
+        break;
+      default:
+        explorerUrl = `https://explorer.${chainId}.org/token/${address}`;
+    }
+    window.open(explorerUrl, '_blank');
+  };
+
+  const handleTokenClick = (token: TokenData) => {
+    setSelectedToken(token);
+  };
+
+  const handleBackToSearch = () => {
+    setSelectedToken(null);
+  };
+
+  // Sort tokens based on current sort settings
+  const sortedTokens = [...tokens].sort((a, b) => {
+    let aValue: number;
+    let bValue: number;
+
+    switch (sortBy) {
+      case 'volume':
+        aValue = a.volume24h;
+        bValue = b.volume24h;
+        break;
+      case 'marketCap':
+        aValue = a.marketCap;
+        bValue = b.marketCap;
+        break;
+      case 'priceChange24h':
+        aValue = a.priceChange24h;
+        bValue = b.priceChange24h;
+        break;
+      case 'age':
+        aValue = a.age;
+        bValue = b.age;
+        break;
+      default:
+        aValue = a.volume24h;
+        bValue = b.volume24h;
+    }
+
+    return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+  });
+
+  // If a token is selected, show the detail view
+  if (selectedToken) {
+    return (
+      <TokenDetailView
+        token={selectedToken}
+        onBack={handleBackToSearch}
+        onAddToWatchlist={onAddToWatchlist ? (token) => onAddToWatchlist(token, 1) : undefined}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -223,148 +297,178 @@ export const TokenSearch: React.FC<TokenSearchProps> = ({
       {loading && (
         <Card>
           <CardContent className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Searching tokens...</p>
+            <div className="flex items-center justify-center gap-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <span className="text-muted-foreground">Searching tokens...</span>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {error && (
         <Card>
-          <CardContent className="p-4">
-            <div className="text-red-500 text-center">{error}</div>
+          <CardContent className="p-8 text-center">
+            <p className="text-red-500">Error: {error}</p>
           </CardContent>
         </Card>
       )}
 
-      {!loading && !error && tokens.length > 0 && (
+      {!loading && !error && sortedTokens.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Search Results ({tokens.length})</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Search Results ({sortedTokens.length})</CardTitle>
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="volume">Volume</SelectItem>
+                    <SelectItem value="marketCap">Market Cap</SelectItem>
+                    <SelectItem value="priceChange24h">24h Change</SelectItem>
+                    <SelectItem value="age">Age</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {/* Mobile-optimized table container with horizontal scroll */}
-            <div className="relative">
-              {/* Scroll indicator for mobile */}
-              <div className="hidden sm:block absolute top-0 right-0 bg-gradient-to-l from-background via-background/80 to-transparent w-8 h-full pointer-events-none z-10" />
-              
-              {/* Table wrapper with horizontal scroll */}
-              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
-                <div className="inline-block min-w-full align-middle">
-                  <div className="overflow-hidden border rounded-lg">
-                    <table className="min-w-full divide-y divide-border">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="px-2 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-8">
-                            #
-                          </th>
-                          <th className="px-2 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[120px]">
-                            Token
-                          </th>
-                          <th className="px-2 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[80px]">
-                            Price
-                          </th>
-                          <th className="px-2 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[70px]">
-                            24h
-                          </th>
-                          <th className="px-2 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[90px] hidden sm:table-cell">
-                            Volume
-                          </th>
-                          <th className="px-2 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[90px] hidden lg:table-cell">
-                            MCap
-                          </th>
-                          <th className="px-2 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[60px] hidden md:table-cell">
-                            Age
-                          </th>
-                          <th className="px-2 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[100px]">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-background divide-y divide-border">
-                        {tokens.map((token, index) => (
-                          <tr 
-                            key={`${token.pairAddress}-${index}`} 
-                            className="hover:bg-muted/50 transition-colors"
-                            ref={index === tokens.length - 1 ? lastTokenElementRef : null}
+            <div className="space-y-2">
+              {sortedTokens.map((token, index) => (
+                <div
+                  key={`${token.pairAddress}-${index}`}
+                  ref={index === sortedTokens.length - 1 ? lastTokenElementRef : null}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+                  onClick={() => handleTokenClick(token)}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Token Logo */}
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">
+                        {token.symbol.slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{token.symbol}</h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {token.dexId}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{token.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {token.contractAddress ? 
+                          `${token.contractAddress.slice(0, 6)}...${token.contractAddress.slice(-4)}` : 
+                          'No contract address'
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="font-medium">{formatNumber(token.price)}</p>
+                      <p 
+                        className="text-sm"
+                        dangerouslySetInnerHTML={{ __html: formatPercentage(token.priceChange24h) }}
+                      />
+                    </div>
+
+                    {/* Volume Indicators */}
+                    <div className="text-right">
+                      <div className="flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">5m</span>
+                      </div>
+                      <p className="text-sm font-medium">{formatNumber(token.volume5m)}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="flex items-center gap-1">
+                        <Activity className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">1h</span>
+                      </div>
+                      <p className="text-sm font-medium">{formatNumber(token.volume1h)}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{formatNumber(token.volume24h)}</p>
+                      <p className="text-xs text-muted-foreground">24h Volume</p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{formatNumber(token.marketCap)}</p>
+                      <p className="text-xs text-muted-foreground">Market Cap</p>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{formatAge(token.age)}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyToClipboard(token.pairAddress);
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openExplorer(token.contractAddress || token.pairAddress, token.chainId);
+                        }}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <WatchlistSelector
+                        token={token}
+                        onAddToWatchlist={onAddToWatchlist}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <td className="px-2 py-3 whitespace-nowrap text-xs text-muted-foreground">
-                              {index + 1}
-                            </td>
-                            <td className="px-2 py-3 whitespace-nowrap">
-                              <div className="flex flex-col">
-                                <div className="text-sm font-medium text-foreground">{token.symbol}</div>
-                                <div className="text-xs text-muted-foreground hidden sm:block truncate max-w-[100px]">
-                                  {token.name}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-right text-sm font-medium">
-                              {formatNumber(token.price)}
-                            </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-right text-sm">
-                              <span
-                                className={`font-medium ${
-                                  token.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'
-                                }`}
-                              >
-                                {token.priceChange24h >= 0 ? '+' : ''}
-                                {token.priceChange24h.toFixed(2)}%
-                              </span>
-                            </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-right text-sm text-muted-foreground hidden sm:table-cell">
-                              {formatNumber(token.volume24h)}
-                            </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-right text-sm text-muted-foreground hidden lg:table-cell">
-                              {formatNumber(token.marketCap)}
-                            </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-right text-sm text-muted-foreground hidden md:table-cell">
-                              {formatAge(token.age)}
-                            </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-center">
-                              <div className="flex gap-1 justify-center items-center">
-                                {onTokenSelect && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onTokenSelect(token)}
-                                    className="text-xs px-2 py-1 h-7"
-                                  >
-                                    View
-                                  </Button>
-                                )}
-                                {onAddToWatchlist && watchlists.length > 0 && (
-                                  <Select
-                                    onValueChange={(watchlistId: string) =>
-                                      onAddToWatchlist(token, parseInt(watchlistId))
-                                    }
-                                  >
-                                    <SelectTrigger className="w-12 sm:w-16 h-7 text-xs">
-                                      <SelectValue placeholder="+" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {watchlists.map((watchlist) => (
-                                        <SelectItem key={watchlist.id} value={watchlist.id.toString()}>
-                                          {watchlist.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            <Star className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTokenClick(token);
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
+              ))}
+
               {/* Loading more indicator */}
               {loadingMore && (
-                <div className="flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                <div className="flex items-center justify-center gap-2 py-4">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                   <span className="ml-2 text-muted-foreground text-sm">Loading more tokens...</span>
                 </div>
               )}
@@ -401,67 +505,4 @@ function debounce<T extends (...args: any[]) => any>(
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
-}
-
-// Mock data generator for development
-function generateMockTokens(query: string, filters: SearchFilters): TokenData[] {
-  const mockTokens: TokenData[] = [
-    {
-      symbol: 'PEPE',
-      name: 'Pepe',
-      price: 0.00000123,
-      priceChange24h: 15.67,
-      priceChange1h: 2.34,
-      priceChange6h: 8.91,
-      volume24h: 2500000,
-      marketCap: 500000,
-      liquidity: 150000,
-      age: 48,
-      holders: 1250,
-      transactions24h: 850,
-      pairAddress: '0x1234567890abcdef',
-      chainId: 'solana',
-      dexId: 'raydium'
-    },
-    {
-      symbol: 'DOGE',
-      name: 'Dogecoin',
-      price: 0.078,
-      priceChange24h: -5.23,
-      priceChange1h: -1.45,
-      priceChange6h: -3.12,
-      volume24h: 15000000,
-      marketCap: 1200000,
-      liquidity: 500000,
-      age: 72,
-      holders: 2100,
-      transactions24h: 1200,
-      pairAddress: '0xabcdef1234567890',
-      chainId: 'solana',
-      dexId: 'raydium'
-    },
-    {
-      symbol: 'SHIB',
-      name: 'Shiba Inu',
-      price: 0.00000089,
-      priceChange24h: 8.45,
-      priceChange1h: 1.23,
-      priceChange6h: 4.67,
-      volume24h: 8000000,
-      marketCap: 800000,
-      liquidity: 300000,
-      age: 24,
-      holders: 950,
-      transactions24h: 650,
-      pairAddress: '0x9876543210fedcba',
-      chainId: 'solana',
-      dexId: 'raydium'
-    }
-  ];
-
-  // Filter based on search query
-  return mockTokens.filter(token =>
-    token.symbol.toLowerCase().includes(query.toLowerCase()) ||
-    token.name.toLowerCase().includes(query.toLowerCase())
-  );
 } 

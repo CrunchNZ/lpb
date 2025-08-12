@@ -25,6 +25,7 @@ interface TokenCardData {
   pairAddress: string;
   chainId: string;
   dexId: string;
+  logoURI?: string;
 }
 
 interface TokenCardProps {
@@ -47,6 +48,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({
   const dispatch = useAppDispatch();
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 1e9) {
@@ -98,18 +100,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({
 
   const handleClick = () => {
     // Open detailed view modal
-    dispatch(openTokenDetail({
-      token,
-      onClose: () => {},
-      onAddToWatchlist: onAddToWatchlist || undefined,
-      onRemoveFromWatchlist: () => {},
-      isInWatchlist: false
-    }));
-    
-    // Also call the original onExpand if provided
-    if (onExpand) {
-      onExpand(token);
-    }
+    dispatch(openTokenDetail(token));
   };
 
   const handleMouseDown = () => {
@@ -129,229 +120,155 @@ export const TokenCard: React.FC<TokenCardProps> = ({
     setIsPressed(false);
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  // Get token icon from DexScreener or fallback to Solana token list
+  const getTokenIcon = () => {
+    if (imageError) {
+      return 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+    }
+    
+    // Try DexScreener icon first
+    if (token.logoURI) {
+      return token.logoURI;
+    }
+    
+    // Fallback to Solana token list
+    return `https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/${token.address}/logo.png`;
+  };
+
   return (
     <div
-      className={`
-        bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 
-        transition-all duration-300 ease-out
-        ${isHovered ? 'border-white/30 bg-white/8 scale-[1.02] shadow-lg shadow-white/5' : ''}
-        ${isPressed ? 'scale-[0.98] bg-white/10' : ''}
-        ${isExpanded ? 'ring-2 ring-blue-500/50 bg-white/10' : ''}
-        ${className}
-        cursor-pointer select-none
-      `}
+      className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all duration-200 cursor-pointer ${
+        isHovered ? 'scale-105' : ''
+      } ${isPressed ? 'scale-95' : ''} ${className}`}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
     >
       {/* Header */}
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-3">
-          <div className={`
-            w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl 
-            flex items-center justify-center transition-transform duration-200
-            ${isHovered ? 'scale-110' : ''}
-          `}>
-            <span className="text-white font-bold text-lg">
-              {token.symbol.slice(0, 3).toUpperCase()}
-            </span>
+          <div className="relative">
+            <img
+              src={getTokenIcon()}
+              alt={token.symbol}
+              className="w-10 h-10 rounded-full"
+              onError={handleImageError}
+            />
+            {token.trending && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                <span className="text-xs">🔥</span>
+              </div>
+            )}
           </div>
           <div>
-            <h3 className="text-xl font-semibold text-white transition-colors duration-200">
-              {token.symbol}
-            </h3>
+            <h3 className="text-lg font-semibold text-white">{token.symbol}</h3>
             <p className="text-sm text-gray-400">{token.name}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className={`
-            px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200
-            ${token.trending ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-gray-500/20 text-gray-400 border-gray-500/30'}
-            ${isHovered ? 'scale-105' : ''}
-          `}>
-            {getTrendingIcon(token.trending)} {token.trending ? 'TRENDING' : 'STABLE'}
+        <div className="text-right">
+          <div className="text-lg font-bold text-white">${token.price.toFixed(6)}</div>
+          <div className={`text-sm ${getPriceChangeColor(token.priceChange24h)}`}>
+            {formatPercentage(token.priceChange24h)}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="bg-white/5 rounded-lg p-3">
+          <div className="text-xs text-gray-400 mb-1">Volume 24h</div>
+          <div className="text-sm font-medium text-white">{formatCurrency(token.volume24h)}</div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-3">
+          <div className="text-xs text-gray-400 mb-1">Market Cap</div>
+          <div className="text-sm font-medium text-white">{formatCurrency(token.marketCap)}</div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-3">
+          <div className="text-xs text-gray-400 mb-1">Liquidity</div>
+          <div className="text-sm font-medium text-white">{formatCurrency(token.liquidity)}</div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-3">
+          <div className="text-xs text-gray-400 mb-1">TVL</div>
+          <div className="text-sm font-medium text-white">{formatCurrency(token.tvl)}</div>
+        </div>
+      </div>
+
+      {/* Additional Info */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-400">Sentiment</span>
+          <span className={`${getSentimentColor(token.sentiment)}`}>
+            {getSentimentIcon(token.sentiment)} {token.sentiment.toFixed(2)}
           </span>
         </div>
-      </div>
-
-      {/* Price Information */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-white/5 rounded-lg p-3 transition-all duration-200 hover:bg-white/8">
-          <p className="text-xs text-gray-400 mb-1">Price</p>
-          <p className="text-lg font-bold text-white">
-            ${token.price.toFixed(6)}
-          </p>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-400">Age</span>
+          <span className="text-white">{formatAge(token.age)}</span>
         </div>
-        <div className="bg-white/5 rounded-lg p-3 transition-all duration-200 hover:bg-white/8">
-          <p className="text-xs text-gray-400 mb-1">24h Change</p>
-          <p className={`text-lg font-bold ${getPriceChangeColor(token.priceChange24h)}`}>
-            {formatPercentage(token.priceChange24h)}
-          </p>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-400">Holders</span>
+          <span className="text-white">{token.holders.toLocaleString()}</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-400">Transactions 24h</span>
+          <span className="text-white">{token.transactions24h.toLocaleString()}</span>
         </div>
       </div>
 
-      {/* Market Metrics */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-lg p-3 transition-all duration-200 hover:bg-blue-500/15">
-          <p className="text-xs text-gray-400 mb-1">Market Cap</p>
-          <p className="text-sm font-bold text-blue-400">
-            {formatCurrency(token.marketCap)}
-          </p>
-        </div>
-        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg p-3 transition-all duration-200 hover:bg-green-500/15">
-          <p className="text-xs text-gray-400 mb-1">Volume 24h</p>
-          <p className="text-sm font-bold text-green-400">
-            {formatCurrency(token.volume24h)}
-          </p>
-        </div>
+      {/* Action Buttons */}
+      <div className="flex space-x-2 mt-4">
+        {onAddToWatchlist && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToWatchlist(token);
+            }}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors"
+          >
+            Add to Watchlist
+          </button>
+        )}
+        {onTrade && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTrade(token);
+            }}
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm py-2 px-3 rounded-lg transition-colors"
+          >
+            Trade
+          </button>
+        )}
+        {onExpand && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onExpand(token);
+            }}
+            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-3 rounded-lg transition-colors"
+          >
+            {isExpanded ? 'Collapse' : 'Expand'}
+          </button>
+        )}
       </div>
 
-      {/* Sentiment & Liquidity */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-white/5 rounded-lg p-3 transition-all duration-200 hover:bg-white/8">
-          <p className="text-xs text-gray-400 mb-1">Sentiment</p>
-          <div className="flex items-center space-x-2">
-            <span className="text-lg">{getSentimentIcon(token.sentiment)}</span>
-            <span className={`text-sm font-medium ${getSentimentColor(token.sentiment)}`}>
-              {(token.sentiment * 100).toFixed(0)}%
-            </span>
-          </div>
-        </div>
-        <div className="bg-white/5 rounded-lg p-3 transition-all duration-200 hover:bg-white/8">
-          <p className="text-xs text-gray-400 mb-1">Liquidity</p>
-          <p className="text-sm font-medium text-white">
-            {formatCurrency(token.liquidity)}
-          </p>
-        </div>
-      </div>
-
-      {/* Expandable Content */}
-      {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-white/10 animate-in slide-in-from-top-2 duration-300">
-          <div className="space-y-4">
-            {/* Additional Metrics */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-1">TVL</p>
-                <p className="text-sm font-medium text-white">
-                  {formatCurrency(token.tvl)}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-1">Age</p>
-                <p className="text-sm font-medium text-white">
-                  {formatAge(token.age)}
-                </p>
-              </div>
-            </div>
-
-            {/* Price Changes */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-1">1h</p>
-                <p className={`text-sm font-medium ${getPriceChangeColor(token.priceChange1h)}`}>
-                  {formatPercentage(token.priceChange1h)}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-1">6h</p>
-                <p className={`text-sm font-medium ${getPriceChangeColor(token.priceChange6h)}`}>
-                  {formatPercentage(token.priceChange6h)}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-1">24h</p>
-                <p className={`text-sm font-medium ${getPriceChangeColor(token.priceChange24h)}`}>
-                  {formatPercentage(token.priceChange24h)}
-                </p>
-              </div>
-            </div>
-
-            {/* Token Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-1">Holders</p>
-                <p className="text-sm font-medium text-white">
-                  {token.holders.toLocaleString()}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-1">24h Txs</p>
-                <p className="text-sm font-medium text-white">
-                  {token.transactions24h.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-2">
-              <button 
-                className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onTrade) onTrade(token);
-                }}
-              >
-                Trade
-              </button>
-              <button 
-                className="flex-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onAddToWatchlist) onAddToWatchlist(token);
-                }}
-              >
-                Add to Watchlist
-              </button>
-            </div>
-
-            {/* Chain Info */}
-            <div className="bg-white/5 rounded-lg p-3">
-              <p className="text-xs text-gray-400 mb-1">Chain & DEX</p>
-              <p className="text-sm font-medium text-white">
-                {token.chainId.toUpperCase()} • {token.dexId.toUpperCase()}
-              </p>
-              <p className="text-xs text-gray-400 mt-1 font-mono">
-                {token.pairAddress.slice(0, 8)}...{token.pairAddress.slice(-6)}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-white/10">
-        <div className="text-xs text-gray-400">
-          {token.chainId.toUpperCase()} • {token.dexId.toUpperCase()}
+      {/* Chain and DEX Info */}
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-gray-400">Chain:</span>
+          <span className="text-xs text-white bg-blue-600 px-2 py-1 rounded">{token.chainId}</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className={`
-            w-2 h-2 bg-green-400 rounded-full transition-all duration-200
-            ${isHovered ? 'scale-125' : ''}
-          `}></div>
-          <span className="text-xs text-gray-400">Live</span>
+          <span className="text-xs text-gray-400">DEX:</span>
+          <span className="text-xs text-white bg-green-600 px-2 py-1 rounded">{token.dexId}</span>
         </div>
       </div>
-
-      {/* Click Indicator */}
-      {!isExpanded && (
-        <div className={`
-          absolute top-4 right-4 text-xs text-gray-400 opacity-0 transition-opacity duration-200
-          ${isHovered ? 'opacity-100' : ''}
-        `}>
-          Click to expand
-        </div>
-      )}
     </div>
   );
 }; 

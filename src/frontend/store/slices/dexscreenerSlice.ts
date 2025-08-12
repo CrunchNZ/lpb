@@ -8,6 +8,8 @@ export interface TokenData {
   priceChange1h: number;
   priceChange6h: number;
   volume24h: number;
+  volume1h: number;
+  volume5m: number;
   marketCap: number;
   liquidity: number;
   age: number;
@@ -16,6 +18,7 @@ export interface TokenData {
   pairAddress: string;
   chainId: string;
   dexId: string;
+  contractAddress?: string;
 }
 
 export interface SearchFilters {

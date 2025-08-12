@@ -89,6 +89,7 @@ export const PerformanceMonitor: React.FC = () => {
       const interval = setInterval(fetchPerformanceData, 5000); // Refresh every 5 seconds
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [autoRefresh]);
 
   if (!performanceData) {

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeftRight, TrendingUp, Zap, Settings, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowDown, ArrowUpDown, XCircle, Search, Loader2 } from 'lucide-react';
+import { dexscreenerService } from '../services/dexscreenerService';
 
 interface Token {
   symbol: string;
@@ -7,62 +8,88 @@ interface Token {
   address: string;
   logoURI: string;
   decimals: number;
+  price?: number;
+  priceChange24h?: number;
+  volume24h?: number;
 }
 
 interface SwapQuote {
   inputMint: string;
   outputMint: string;
-  inputAmount: string;
-  outputAmount: string;
-  priceImpact: number;
+  inAmount: number;
+  outAmount: number;
+  priceImpactPct: number;
   fee: number;
   route: any[];
 }
 
 // Mock tokens for demonstration
 const mockTokens: Token[] = [
-  { symbol: 'SOL', name: 'Solana', address: 'So11111111111111111111111111111111111111112', logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png', decimals: 9 },
-  { symbol: 'USDC', name: 'USD Coin', address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png', decimals: 6 },
-  { symbol: 'BONK', name: 'Bonk', address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', logoURI: 'https://arweave.net/hQB3X7Wz0QnORmW0WVjNYGLlJ14mI5X2u0Kq9kqkqkQ', decimals: 5 },
-  { symbol: 'JUP', name: 'Jupiter', address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN/logo.png', decimals: 6 },
+  { symbol: 'SOL', name: 'Solana', address: 'So11111111111111111111111111111111111111112', logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png', decimals: 9, price: 98.45, priceChange24h: 2.34, volume24h: 45000000 },
+  { symbol: 'USDC', name: 'USD Coin', address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png', decimals: 6, price: 1.00, priceChange24h: 0.00, volume24h: 25000000 },
+  { symbol: 'BONK', name: 'Bonk', address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', logoURI: 'https://arweave.net/hQB3X7Wz0QnORmW0WVjNYGLlJ14mI5X2u0Kq9kqkqkQ', decimals: 5, price: 0.00000045, priceChange24h: -8.92, volume24h: 1800000 },
+  { symbol: 'JUP', name: 'Jupiter', address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN/logo.png', decimals: 6, price: 0.85, priceChange24h: 5.67, volume24h: 12000000 },
 ];
 
 export const SwapInterface: React.FC = () => {
   const [fromToken, setFromToken] = useState<Token>(mockTokens[0]);
   const [toToken, setToToken] = useState<Token>(mockTokens[1]);
-  const [fromAmount, setFromAmount] = useState<string>('');
-  const [toAmount, setToAmount] = useState<string>('');
-  const [slippage, setSlippage] = useState<number>(0.5);
-  const [showSlippageSettings, setShowSlippageSettings] = useState<boolean>(false);
+  const [fromAmount, setFromAmount] = useState('');
+  const [toAmount, setToAmount] = useState('');
   const [swapQuote, setSwapQuote] = useState<SwapQuote | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [transactionStatus, setTransactionStatus] = useState<'idle' | 'pending' | 'success' | 'failed'>('idle');
-  const [showTokenSelector, setShowTokenSelector] = useState<'from' | 'to' | null>(null);
+  const [transactionStatus, setTransactionStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const [slippage, setSlippage] = useState(0.5);
+  const [showFromSelector, setShowFromSelector] = useState(false);
+  const [showToSelector, setShowToSelector] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Token[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock swap quote generation
-  useEffect(() => {
-    if (fromAmount && parseFloat(fromAmount) > 0) {
-      setIsLoading(true);
-      // Simulate API call delay
-      setTimeout(() => {
-        const mockQuote: SwapQuote = {
-          inputMint: fromToken.address,
-          outputMint: toToken.address,
-          inputAmount: fromAmount,
-          outputAmount: (parseFloat(fromAmount) * 0.98).toFixed(6), // Mock conversion
-          priceImpact: 0.5,
-          fee: 0.3,
-          route: [{ platform: 'Jupiter', steps: 1 }]
-        };
-        setSwapQuote(mockQuote);
-        setToAmount(mockQuote.outputAmount);
-        setIsLoading(false);
-      }, 1000);
-    } else {
-      setSwapQuote(null);
-      setToAmount('');
+  // Search for tokens using DexScreener API
+  const searchTokens = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
     }
-  }, [fromAmount, fromToken, toToken]);
+
+    setSearchLoading(true);
+    setError(null);
+
+    try {
+      const result = await dexscreenerService.searchTokens(query, {
+        chainId: 'solana',
+        minVolume: 1000,
+        minMarketCap: 1000,
+      });
+
+      const tokens: Token[] = result.tokens.slice(0, 10).map(token => ({
+        symbol: token.symbol,
+        name: token.name,
+        address: token.pairAddress,
+        logoURI: token.logoURI || `https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/${token.pairAddress}/logo.png`,
+        decimals: 6,
+        price: token.price,
+        priceChange24h: token.priceChange24h,
+        volume24h: token.volume24h,
+      }));
+
+      setSearchResults(tokens);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to search tokens');
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchTokens(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchTokens]);
 
   const handleSwapTokens = () => {
     setFromToken(toToken);
@@ -75,8 +102,12 @@ export const SwapInterface: React.FC = () => {
     if (!swapQuote) return;
     
     setTransactionStatus('pending');
-    // Simulate transaction
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      // Simulate Jupiter swap transaction
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
       setTransactionStatus('success');
       setTimeout(() => {
         setTransactionStatus('idle');
@@ -84,23 +115,118 @@ export const SwapInterface: React.FC = () => {
         setToAmount('');
         setSwapQuote(null);
       }, 2000);
-    }, 3000);
+    } catch (err) {
+      setTransactionStatus('error');
+      setError(err instanceof Error ? err.message : 'Transaction failed');
+      setTimeout(() => {
+        setTransactionStatus('idle');
+      }, 3000);
+    }
   };
 
   const formatNumber = (value: string | number, decimals: number = 6) => {
     return parseFloat(value.toString()).toFixed(decimals);
   };
 
-  const TokenSelector: React.FC<{ tokens: Token[]; onSelect: (token: Token) => void; onClose: () => void }> = ({ tokens, onSelect, onClose }) => (
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1e9) {
+      return `$${(amount / 1e9).toFixed(2)}B`;
+    } else if (amount >= 1e6) {
+      return `$${(amount / 1e6).toFixed(2)}M`;
+    } else if (amount >= 1e3) {
+      return `$${(amount / 1e3).toFixed(2)}K`;
+    } else {
+      return `$${amount.toFixed(2)}`;
+    }
+  };
+
+  const formatPercentage = (value: number) => {
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(2)}%`;
+  };
+
+  const getPriceChangeColor = (change: number) => {
+    return change >= 0 ? 'text-green-400' : 'text-red-400';
+  };
+
+  const TokenSelector: React.FC<{ 
+    tokens: Token[]; 
+    onSelect: (token: Token) => void; 
+    onClose: () => void;
+    searchQuery: string;
+    onSearchChange: (query: string) => void;
+    searchLoading: boolean;
+    searchResults: Token[];
+  }> = ({ tokens, onSelect, onClose, searchQuery, onSearchChange, searchLoading, searchResults }) => (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 w-full max-w-md">
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">Select Token</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white">
             <XCircle className="w-6 h-6" />
           </button>
         </div>
+        
+        {/* Search Input */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search tokens..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {searchLoading && (
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+          )}
+        </div>
+
         <div className="space-y-2 max-h-64 overflow-y-auto">
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <>
+              <div className="text-xs text-gray-400 mb-2">Search Results</div>
+              {searchResults.map((token) => (
+                <button
+                  key={token.address}
+                  onClick={() => {
+                    onSelect(token);
+                    onClose();
+                  }}
+                  className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-colors"
+                >
+                  <img 
+                    src={token.logoURI} 
+                    alt={token.symbol} 
+                    className="w-8 h-8 rounded-full"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+                    }}
+                  />
+                  <div className="text-left flex-1">
+                    <div className="font-medium text-white">{token.symbol}</div>
+                    <div className="text-sm text-gray-400">{token.name}</div>
+                  </div>
+                  {token.price && (
+                    <div className="text-right">
+                      <div className="text-sm text-white">${token.price.toFixed(6)}</div>
+                      {token.priceChange24h !== undefined && (
+                        <div className={`text-xs ${getPriceChangeColor(token.priceChange24h)}`}>
+                          {formatPercentage(token.priceChange24h)}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </button>
+              ))}
+              <div className="border-t border-white/10 my-2"></div>
+            </>
+          )}
+
+          {/* Popular Tokens */}
+          <div className="text-xs text-gray-400 mb-2">Popular Tokens</div>
           {tokens.map((token) => (
             <button
               key={token.address}
@@ -110,11 +236,29 @@ export const SwapInterface: React.FC = () => {
               }}
               className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 transition-colors"
             >
-              <img src={token.logoURI} alt={token.symbol} className="w-8 h-8 rounded-full" />
-              <div className="text-left">
+              <img 
+                src={token.logoURI} 
+                alt={token.symbol} 
+                className="w-8 h-8 rounded-full"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+                }}
+              />
+              <div className="text-left flex-1">
                 <div className="font-medium text-white">{token.symbol}</div>
                 <div className="text-sm text-gray-400">{token.name}</div>
               </div>
+              {token.price && (
+                <div className="text-right">
+                  <div className="text-sm text-white">${token.price.toFixed(6)}</div>
+                  {token.priceChange24h !== undefined && (
+                    <div className={`text-xs ${getPriceChangeColor(token.priceChange24h)}`}>
+                      {formatPercentage(token.priceChange24h)}
+                    </div>
+                  )}
+                </div>
+              )}
             </button>
           ))}
         </div>
@@ -123,178 +267,175 @@ export const SwapInterface: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <ArrowLeftRight className="w-8 h-8 text-purple-400" />
-                <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  Swap
-                </h1>
-              </div>
-              <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-full">
-                Jupiter Integration
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-6">
+      <div className="max-w-md mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2">Swap Tokens</h1>
+          <p className="text-gray-400">Trade any token on Jupiter</p>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+              <span className="text-red-200">{error}</span>
             </div>
           </div>
-        </div>
-      </header>
+        )}
 
-      {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Swap Card */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+        {/* Swap Interface */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 space-y-6">
           {/* From Token */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">From</label>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <div className="space-y-2">
+            <label className="text-sm text-gray-400">From</label>
+            <div className="bg-white/10 border border-white/20 rounded-xl p-4">
               <div className="flex items-center justify-between">
-                <button
-                  onClick={() => setShowTokenSelector('from')}
-                  className="flex items-center space-x-3 hover:bg-white/10 rounded-lg p-2 transition-colors"
-                >
-                  <img src={fromToken.logoURI} alt={fromToken.symbol} className="w-8 h-8 rounded-full" />
-                  <div className="text-left">
+                <div className="flex items-center space-x-3">
+                  <img 
+                    src={fromToken.logoURI} 
+                    alt={fromToken.symbol} 
+                    className="w-10 h-10 rounded-full"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+                    }}
+                  />
+                  <div>
                     <div className="font-medium text-white">{fromToken.symbol}</div>
                     <div className="text-sm text-gray-400">{fromToken.name}</div>
                   </div>
+                </div>
+                <button
+                  onClick={() => setShowFromSelector(true)}
+                  className="text-blue-400 hover:text-blue-300 text-sm"
+                >
+                  Change
                 </button>
-                <input
-                  type="number"
-                  value={fromAmount}
-                  onChange={(e) => setFromAmount(e.target.value)}
-                  placeholder="0.0"
-                  className="bg-transparent text-right text-xl font-semibold text-white placeholder-gray-500 focus:outline-none"
-                />
               </div>
+              <input
+                type="number"
+                placeholder="0.0"
+                value={fromAmount}
+                onChange={(e) => setFromAmount(e.target.value)}
+                className="w-full mt-3 bg-transparent text-2xl font-bold text-white placeholder-gray-400 focus:outline-none"
+              />
+              {fromToken.price && (
+                <div className="text-sm text-gray-400 mt-1">
+                  ≈ ${(parseFloat(fromAmount || '0') * fromToken.price).toFixed(2)} USD
+                </div>
+              )}
             </div>
           </div>
 
           {/* Swap Button */}
-          <div className="flex justify-center my-4">
+          <div className="flex justify-center">
             <button
               onClick={handleSwapTokens}
-              className="w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center transition-colors"
+              className="w-12 h-12 bg-white/10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
             >
-              <ArrowLeftRight className="w-5 h-5 text-white" />
+              <ArrowUpDown className="w-5 h-5" />
             </button>
           </div>
 
           {/* To Token */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-300 mb-2">To</label>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <div className="space-y-2">
+            <label className="text-sm text-gray-400">To</label>
+            <div className="bg-white/10 border border-white/20 rounded-xl p-4">
               <div className="flex items-center justify-between">
-                <button
-                  onClick={() => setShowTokenSelector('to')}
-                  className="flex items-center space-x-3 hover:bg-white/10 rounded-lg p-2 transition-colors"
-                >
-                  <img src={toToken.logoURI} alt={toToken.symbol} className="w-8 h-8 rounded-full" />
-                  <div className="text-left">
+                <div className="flex items-center space-x-3">
+                  <img 
+                    src={toToken.logoURI} 
+                    alt={toToken.symbol} 
+                    className="w-10 h-10 rounded-full"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+                    }}
+                  />
+                  <div>
                     <div className="font-medium text-white">{toToken.symbol}</div>
                     <div className="text-sm text-gray-400">{toToken.name}</div>
                   </div>
-                </button>
-                <div className="text-right">
-                  <div className="text-xl font-semibold text-white">
-                    {isLoading ? '...' : toAmount || '0.0'}
-                  </div>
-                  {swapQuote && (
-                    <div className="text-sm text-gray-400">
-                      1 {fromToken.symbol} = {formatNumber(parseFloat(toAmount) / parseFloat(fromAmount), 6)} {toToken.symbol}
-                    </div>
-                  )}
                 </div>
+                <button
+                  onClick={() => setShowToSelector(true)}
+                  className="text-blue-400 hover:text-blue-300 text-sm"
+                >
+                  Change
+                </button>
               </div>
+              <input
+                type="number"
+                placeholder="0.0"
+                value={toAmount}
+                onChange={(e) => setToAmount(e.target.value)}
+                className="w-full mt-3 bg-transparent text-2xl font-bold text-white placeholder-gray-400 focus:outline-none"
+              />
+              {toToken.price && (
+                <div className="text-sm text-gray-400 mt-1">
+                  ≈ ${(parseFloat(toAmount || '0') * toToken.price).toFixed(2)} USD
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Swap Quote Details */}
+          {/* Swap Quote */}
           {swapQuote && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Price Impact</span>
-                  <span className={`text-sm ${swapQuote.priceImpact < 1 ? 'text-green-400' : 'text-yellow-400'}`}>
-                    {swapQuote.priceImpact}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Network Fee</span>
-                  <span className="text-sm text-white">{swapQuote.fee} SOL</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Route</span>
-                  <div className="flex items-center space-x-2">
-                    <Zap className="w-4 h-4 text-yellow-400" />
-                    <span className="text-sm text-white">Jupiter</span>
-                  </div>
-                </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Price Impact</span>
+                <span className="text-white">{swapQuote.priceImpactPct.toFixed(2)}%</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Fee</span>
+                <span className="text-white">${swapQuote.fee.toFixed(6)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Route</span>
+                <span className="text-white">{swapQuote.route.length} hops</span>
               </div>
             </div>
           )}
 
           {/* Slippage Settings */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-400">Slippage Tolerance</span>
-              <button
-                onClick={() => setShowSlippageSettings(!showSlippageSettings)}
-                className="flex items-center space-x-2 text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                <Settings className="w-4 h-4" />
-                <span>{slippage}%</span>
-              </button>
+          <div className="space-y-2">
+            <label className="text-sm text-gray-400">Slippage Tolerance</label>
+            <div className="flex space-x-2">
+              {[0.1, 0.5, 1.0].map((value) => (
+                <button
+                  key={value}
+                  onClick={() => setSlippage(value)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                    slippage === value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                  }`}
+                >
+                  {value}%
+                </button>
+              ))}
             </div>
-            {showSlippageSettings && (
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
-                <div className="flex space-x-2 mb-3">
-                  {[0.1, 0.5, 1.0].map((value) => (
-                    <button
-                      key={value}
-                      onClick={() => setSlippage(value)}
-                      className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                        slippage === value
-                          ? 'bg-purple-500 text-white'
-                          : 'bg-white/10 text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {value}%
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="number"
-                  value={slippage}
-                  onChange={(e) => setSlippage(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-400"
-                  placeholder="Custom slippage"
-                />
-              </div>
-            )}
           </div>
 
           {/* Swap Button */}
           <button
             onClick={handleSwap}
-            disabled={!swapQuote || isLoading || transactionStatus === 'pending'}
-            className={`w-full py-4 rounded-xl font-semibold transition-all ${
-              !swapQuote || isLoading || transactionStatus === 'pending'
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
+            disabled={!swapQuote || transactionStatus === 'pending'}
+            className={`w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${
+              transactionStatus === 'pending'
+                ? 'bg-gray-600 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
             }`}
           >
             {transactionStatus === 'pending' ? (
               <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                <span>Swapping...</span>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Processing...</span>
               </div>
             ) : transactionStatus === 'success' ? (
               <div className="flex items-center justify-center space-x-2">
-                <CheckCircle className="w-5 h-5" />
+                <div className="w-5 h-5 bg-green-400 rounded-full"></div>
                 <span>Swap Successful!</span>
               </div>
             ) : (
@@ -303,45 +444,31 @@ export const SwapInterface: React.FC = () => {
           </button>
         </div>
 
-        {/* Recent Transactions */}
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-white mb-4">Recent Transactions</h3>
-          <div className="space-y-3">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-white">SOL → USDC</div>
-                    <div className="text-xs text-gray-400">2.5 SOL for 245.50 USDC</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-400">2 min ago</div>
-                  <div className="text-xs text-green-400">Completed</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+        {/* Token Selectors */}
+        {showFromSelector && (
+          <TokenSelector
+            tokens={mockTokens}
+            onSelect={setFromToken}
+            onClose={() => setShowFromSelector(false)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchLoading={searchLoading}
+            searchResults={searchResults}
+          />
+        )}
 
-      {/* Token Selector Modal */}
-      {showTokenSelector && (
-        <TokenSelector
-          tokens={mockTokens}
-          onSelect={(token) => {
-            if (showTokenSelector === 'from') {
-              setFromToken(token);
-            } else {
-              setToToken(token);
-            }
-          }}
-          onClose={() => setShowTokenSelector(null)}
-        />
-      )}
+        {showToSelector && (
+          <TokenSelector
+            tokens={mockTokens}
+            onSelect={setToToken}
+            onClose={() => setShowToSelector(false)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchLoading={searchLoading}
+            searchResults={searchResults}
+          />
+        )}
+      </div>
     </div>
   );
 }; 

@@ -73,7 +73,7 @@ describe('PoolCard', () => {
       </Provider>
     );
     // Initially not expanded
-    const card = screen.getAllByRole('button')[0];
+    const card = screen.getByRole('button', { name: /SOL-USDC/i });
     expect(card).toHaveAttribute('aria-expanded', 'false');
     // Click to expand
     fireEvent.click(card);
@@ -95,7 +95,7 @@ describe('PoolCard', () => {
       </Provider>
     );
     // Expand first
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button', { name: /SOL-USDC/i }));
     // Click Add Liquidity
     fireEvent.click(screen.getByText('Add Liquidity'));
     expect(handlers.onAddLiquidity).toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe('PoolCard', () => {
         <PoolCard {...defaultProps} />
       </Provider>
     );
-    const card = screen.getByRole('button');
+    const card = screen.getByRole('button', { name: /SOL-USDC/i });
     // Hover
     fireEvent.mouseEnter(card);
     expect(card.className).toMatch(/scale-\[1.02\]/);
@@ -134,7 +134,7 @@ describe('PoolCard', () => {
         <PoolCard {...defaultProps} />
       </Provider>
     );
-    const card = screen.getByRole('button');
+    const card = screen.getByRole('button', { name: /SOL-USDC/i });
     card.focus();
     fireEvent.keyDown(card, { key: 'Enter' });
     expect(card).toHaveAttribute('aria-expanded', 'true');

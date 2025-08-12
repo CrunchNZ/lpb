@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ArrowLeftRight, Droplets, Star, Settings } from 'lucide-react';
+import { Wallet, ArrowLeftRight, Droplets, Star, Settings } from 'lucide-react';
 import { useTheme } from '../store/hooks';
 
 interface TabItem {
@@ -18,8 +18,8 @@ interface BottomTabNavigationProps {
 const tabItems: TabItem[] = [
   {
     id: 'positions',
-    label: 'Positions',
-    icon: Home,
+    label: 'Wallet',
+    icon: Wallet,
   },
   {
     id: 'swap',

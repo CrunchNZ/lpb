@@ -79,24 +79,25 @@ npx react-native init LiquiditySentinelMobile
 
 ### Production Environment Variables
 
-Create `.env.production`:
+Create `.env.production` or set system environment variables:
 ```env
-# API Configuration
+# Renderer (Vite) variables
+VITE_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+VITE_SOLANA_WS_URL=wss://api.mainnet-beta.solana.com
 VITE_DEXSCREENER_API_URL=https://api.dexscreener.com
-VITE_JUPITER_API_URL=https://quote-api.jup.ag
+VITE_JUPITER_API_URL=https://quote-api.jup.ag/v6
+VITE_JUPITER_PRICE_API_URL=https://price.jup.ag/v4
 VITE_METEORA_API_URL=https://api.meteora.ag
 
-# Database Configuration
-VITE_DATABASE_URL=your-production-database-url
+# Backend/API
+NODE_ENV=production
+PORT=3001
+CORS_ORIGINS=https://your.domain
+ALLOW_NULL_ORIGIN=false
+LOG_LEVEL=info
 
-# Security
-VITE_ENABLE_ANALYTICS=true
-VITE_SENTRY_DSN=your-sentry-dsn
-
-# Feature Flags
-VITE_ENABLE_SWAP=true
-VITE_ENABLE_LIQUIDITY=true
-VITE_ENABLE_WATCHLISTS=true
+# Security (MUST set in production)
+WALLET_ENCRYPTION_KEY=change-me
 ```
 
 ### Build Configuration

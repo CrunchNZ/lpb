@@ -4,16 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useAppDispatch } from '../store';
-import { openWatchlistDetail } from '../store/slices/uiSlice';
-import { Plus, Trash2, Edit, Eye, RefreshCw, Star, TrendingUp, TrendingDown, Clock, Users, Activity } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { useTheme } from '../store/hooks';
-import { TokenData } from '../../backend/integrations/dexscreener';
+import { ErrorBoundary } from './ErrorBoundary';
 
 interface Watchlist {
   id: number;
@@ -31,55 +22,174 @@ interface WatchlistToken {
   pairAddress: string;
   chainId: string;
   addedAt: number;
+  price?: number;
+  priceChange24h?: number;
+  volume24h?: number;
+  logoURI?: string;
 }
 
 interface WatchlistViewProps {
-  watchlists: Watchlist[];
-  watchlistTokens: Record<number, WatchlistToken[]>;
-  tokenData: Record<string, TokenData>;
-  onCreateWatchlist: (name: string) => Promise<void>;
-  onUpdateWatchlist: (id: number, name: string) => Promise<void>;
-  onDeleteWatchlist: (id: number) => Promise<void>;
-  onAddTokenToWatchlist: (watchlistId: number, token: TokenData) => Promise<void>;
-  onRemoveTokenFromWatchlist: (watchlistId: number, tokenSymbol: string) => Promise<void>;
-  onRefreshTokenData: () => Promise<void>;
-  onTokenSelect?: (token: TokenData) => void;
+  watchlists?: Watchlist[];
+  watchlistTokens?: Record<number, WatchlistToken[]>;
+  onCreateWatchlist?: (name: string) => Promise<void>;
+  onUpdateWatchlist?: (id: number, name: string) => Promise<void>;
+  onDeleteWatchlist?: (id: number) => Promise<void>;
+  onAddTokenToWatchlist?: (watchlistId: number, token: any) => Promise<void>;
+  onRemoveTokenFromWatchlist?: (watchlistId: number, tokenSymbol: string) => Promise<void>;
+  onTokenSelect?: (token: WatchlistToken) => void;
 }
 
 export const WatchlistView: React.FC<WatchlistViewProps> = ({
-  watchlists,
-  watchlistTokens,
-  tokenData,
+  watchlists = [],
+  watchlistTokens = {},
   onCreateWatchlist,
   onUpdateWatchlist,
   onDeleteWatchlist,
   onAddTokenToWatchlist,
   onRemoveTokenFromWatchlist,
-  onRefreshTokenData,
   onTokenSelect
 }) => {
-  const dispatch = useAppDispatch();
-  const { theme } = useTheme();
-  const [selectedWatchlist, setSelectedWatchlist] = useState<number | null>(null);
   const [newWatchlistName, setNewWatchlistName] = useState('');
   const [editingWatchlist, setEditingWatchlist] = useState<{ id: number; name: string } | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
-  const [hoveredToken, setHoveredToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const formatNumber = (num: number): string => {
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-    if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
-    return `$${num.toFixed(2)}`;
+  // Mock data for development
+  const mockWatchlists: Watchlist[] = [
+    {
+      id: 1,
+      name: 'My Favorites',
+      createdAt: Date.now() - 86400000,
+      updatedAt: Date.now(),
+      tokenCount: 3
+    },
+    {
+      id: 2,
+      name: 'Trending Tokens',
+      createdAt: Date.now() - 172800000,
+      updatedAt: Date.now(),
+      tokenCount: 5
+    }
+  ];
+
+  const mockWatchlistTokens: Record<number, WatchlistToken[]> = {
+    1: [
+      {
+        id: 1,
+        watchlistId: 1,
+        tokenSymbol: 'PEPE',
+        tokenName: 'Pepe',
+        pairAddress: 'mock_address_1',
+        chainId: 'solana',
+        addedAt: Date.now() - 3600000,
+        price: 0.00000123,
+        priceChange24h: 15.67,
+        volume24h: 2500000,
+        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263/logo.png'
+      },
+      {
+        id: 2,
+        watchlistId: 1,
+        tokenSymbol: 'BONK',
+        tokenName: 'Bonk',
+        pairAddress: 'mock_address_2',
+        chainId: 'solana',
+        addedAt: Date.now() - 7200000,
+        price: 0.00000045,
+        priceChange24h: -8.92,
+        volume24h: 1800000,
+        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263/logo.png'
+      }
+    ],
+    2: [
+      {
+        id: 3,
+        watchlistId: 2,
+        tokenSymbol: 'SOL',
+        tokenName: 'Solana',
+        pairAddress: 'mock_address_3',
+        chainId: 'solana',
+        addedAt: Date.now() - 1800000,
+        price: 98.45,
+        priceChange24h: 2.34,
+        volume24h: 45000000,
+        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'
+      }
+    ]
   };
 
-  const formatAge = (hours: number): string => {
-    if (hours < 1) return '<1h';
-    if (hours < 24) return `${Math.floor(hours)}h`;
-    return `${Math.floor(hours / 24)}d`;
+  const displayWatchlists = watchlists.length > 0 ? watchlists : mockWatchlists;
+  const displayWatchlistTokens = Object.keys(watchlistTokens).length > 0 ? watchlistTokens : mockWatchlistTokens;
+
+  const handleCreateWatchlist = async () => {
+    if (!newWatchlistName.trim()) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (onCreateWatchlist) {
+        await onCreateWatchlist(newWatchlistName);
+      }
+      setNewWatchlistName('');
+      setShowCreateDialog(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create watchlist');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateWatchlist = async () => {
+    if (!editingWatchlist || !editingWatchlist.name.trim()) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (onUpdateWatchlist) {
+        await onUpdateWatchlist(editingWatchlist.id, editingWatchlist.name);
+      }
+      setEditingWatchlist(null);
+      setShowEditDialog(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update watchlist');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteWatchlist = async (id: number) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (onDeleteWatchlist) {
+        await onDeleteWatchlist(id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete watchlist');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString();
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1e9) {
+      return `$${(amount / 1e9).toFixed(2)}B`;
+    } else if (amount >= 1e6) {
+      return `$${(amount / 1e6).toFixed(2)}M`;
+    } else if (amount >= 1e3) {
+      return `$${(amount / 1e3).toFixed(2)}K`;
+    } else {
+      return `$${amount.toFixed(2)}`;
+    }
   };
 
   const formatPercentage = (value: number) => {
@@ -91,451 +201,225 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     return change >= 0 ? 'text-green-400' : 'text-red-400';
   };
 
-  const getPriceChangeIcon = (change: number) => {
-    return change >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />;
-  };
-
-  const handleCreateWatchlist = async () => {
-    if (!newWatchlistName.trim()) return;
-    
-    setLoading(true);
-    try {
-      await onCreateWatchlist(newWatchlistName.trim());
-      setNewWatchlistName('');
-      setShowCreateDialog(false);
-    } catch (error) {
-      console.error('Failed to create watchlist:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdateWatchlist = async () => {
-    if (!editingWatchlist || !editingWatchlist.name.trim()) return;
-    
-    setLoading(true);
-    try {
-      await onUpdateWatchlist(editingWatchlist.id, editingWatchlist.name.trim());
-      setEditingWatchlist(null);
-      setShowEditDialog(false);
-    } catch (error) {
-      console.error('Failed to update watchlist:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteWatchlist = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this watchlist?')) return;
-    
-    setLoading(true);
-    try {
-      await onDeleteWatchlist(id);
-      if (selectedWatchlist === id) {
-        setSelectedWatchlist(null);
-      }
-    } catch (error) {
-      console.error('Failed to delete watchlist:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTokenClick = (tokenSymbol: string) => {
-    const newExpanded = new Set(expandedTokens);
-    if (newExpanded.has(tokenSymbol)) {
-      newExpanded.delete(tokenSymbol);
-    } else {
-      newExpanded.add(tokenSymbol);
-    }
-    setExpandedTokens(newExpanded);
-  };
-
-  const currentTokens = selectedWatchlist ? watchlistTokens[selectedWatchlist] || [] : [];
+  // Error fallback component
+  const ErrorFallback = () => (
+    <div className="flex items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-800 rounded-lg">
+      <div className="text-center">
+        <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Failed to load watchlists</h3>
+        <p className="text-gray-500 dark:text-gray-400 mb-4">Please try refreshing the page</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+        >
+          Refresh Page
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Star className="h-5 w-5" />
-          <h2 className="text-2xl font-bold">Watchlists</h2>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefreshTokenData}
-            disabled={loading}
-            className="transition-all duration-200 hover:scale-105"
+    <ErrorBoundary fallback={<ErrorFallback />}>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Watchlists</h2>
+            <p className="text-gray-600 dark:text-gray-400">Manage your token watchlists</p>
+          </div>
+          <button
+            onClick={() => setShowCreateDialog(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="transition-all duration-200 hover:scale-105">
-                <Plus className="h-4 w-4 mr-1" />
-                New Watchlist
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Watchlist</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Input
-                  placeholder="Watchlist name..."
-                  value={newWatchlistName}
-                  onChange={(e) => setNewWatchlistName(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleCreateWatchlist()}
-                />
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateWatchlist} disabled={loading || !newWatchlistName.trim()}>
-                    Create
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+            Create Watchlist
+          </button>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Watchlists Sidebar */}
-        <div className="space-y-2">
-          <h3 className="font-semibold">Your Watchlists</h3>
-          <div className="space-y-2">
-            {watchlists.map((watchlist) => (
-              <div
-                key={watchlist.id}
-                onClick={() => {
-                  setSelectedWatchlist(watchlist.id);
-                  
-                  // Open detailed view for the watchlist
-                  const tokens = watchlistTokens[watchlist.id] || [];
-                  dispatch(openWatchlistDetail({
-                    watchlist,
-                    tokens,
-                    tokenData,
-                    onClose: () => {},
-                    onRemoveTokens: (symbols) => {
-                      symbols.forEach(symbol => {
-                        onRemoveTokenFromWatchlist(watchlist.id, symbol);
-                      });
-                    },
-                    onAddToken: (token) => {
-                      onAddTokenToWatchlist(watchlist.id, token);
-                    },
-                    onRefreshData: onRefreshTokenData,
-                    onTokenSelect: onTokenSelect || undefined
-                  }));
-                }}
-                onMouseEnter={() => setHoveredToken(`watchlist-${watchlist.id}`)}
-                onMouseLeave={() => setHoveredToken(null)}
-              >
-                <Card
-                  className={`
-                    cursor-pointer transition-all duration-300 ease-out
-                    ${selectedWatchlist === watchlist.id 
-                      ? 'ring-2 ring-blue-500/50 bg-white/10 scale-[1.02]' 
-                      : 'hover:bg-white/8 hover:scale-[1.01]'
-                    }
-                    ${hoveredToken === `watchlist-${watchlist.id}` ? 'shadow-lg shadow-white/5' : ''}
-                  `}
-                >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium">{watchlist.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {watchlist.tokenCount || 0} tokens
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300">{error}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+          </div>
+        )}
+
+        {/* Watchlists */}
+        {!loading && displayWatchlists.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No watchlists yet</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Create your first watchlist to start tracking tokens</p>
+            <button
+              onClick={() => setShowCreateDialog(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Create Watchlist
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {displayWatchlists.map((watchlist) => (
+              <div key={watchlist.id} className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{watchlist.name}</h3>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        setEditingWatchlist({ id: watchlist.id, name: watchlist.name });
+                        setShowEditDialog(true);
+                      }}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteWatchlist(watchlist.id)}
+                      className="text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  <p>Created: {formatDate(watchlist.createdAt)}</p>
+                  <p>Updated: {formatDate(watchlist.updatedAt)}</p>
+                  <p>Tokens: {watchlist.tokenCount || 0}</p>
+                </div>
+
+                {/* Token List */}
+                <div className="space-y-3">
+                  {displayWatchlistTokens[watchlist.id]?.map((token) => (
+                    <div 
+                      key={token.id} 
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      onClick={() => onTokenSelect?.(token)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={token.logoURI || `https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png`}
+                          alt={token.tokenSymbol}
+                          className="w-8 h-8 rounded-full"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+                          }}
+                        />
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{token.tokenSymbol}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{token.tokenName}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {token.price && (
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            ${token.price.toFixed(6)}
+                          </div>
+                        )}
+                        {token.priceChange24h !== undefined && (
+                          <div className={`text-sm ${getPriceChangeColor(token.priceChange24h)}`}>
+                            {formatPercentage(token.priceChange24h)}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingWatchlist({ id: watchlist.id, name: watchlist.name });
-                          setShowEditDialog(true);
-                        }}
-                        className="transition-all duration-200 hover:scale-110"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteWatchlist(watchlist.id);
-                        }}
-                        className="transition-all duration-200 hover:scale-110"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  ))}
                 </div>
+              </div>
             ))}
           </div>
-        </div>
+        )}
 
-        {/* Token Cards */}
-        <div className="lg:col-span-2">
-          {selectedWatchlist ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">
-                  {watchlists.find(w => w.id === selectedWatchlist)?.name} Tokens
-                </h3>
-                <Badge variant="secondary">
-                  {currentTokens.length} tokens
-                </Badge>
+        {/* Create Dialog */}
+        {showCreateDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create Watchlist</h3>
+              <input
+                type="text"
+                value={newWatchlistName}
+                onChange={(e) => setNewWatchlistName(e.target.value)}
+                placeholder="Enter watchlist name"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+              <div className="flex justify-end space-x-3 mt-4">
+                <button
+                  onClick={() => setShowCreateDialog(false)}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateWatchlist}
+                  disabled={!newWatchlistName.trim() || loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Create
+                </button>
               </div>
-
-              {currentTokens.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {currentTokens.map((token) => {
-                    const tokenDataItem = tokenData[token.tokenSymbol];
-                    const isExpanded = expandedTokens.has(token.tokenSymbol);
-                    const isHovered = hoveredToken === token.tokenSymbol;
-
-                    return (
-                      <div
-                        key={token.id}
-                        onClick={() => handleTokenClick(token.tokenSymbol)}
-                        onMouseEnter={() => setHoveredToken(token.tokenSymbol)}
-                        onMouseLeave={() => setHoveredToken(null)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            handleTokenClick(token.tokenSymbol);
-                          }
-                        }}
-                      >
-                        <Card
-                          className={`
-                            cursor-pointer transition-all duration-300 ease-out
-                            ${isHovered ? 'border-white/30 bg-white/8 scale-[1.02] shadow-lg shadow-white/5' : ''}
-                            ${isExpanded ? 'ring-2 ring-blue-500/50 bg-white/10' : ''}
-                          `}
-                        >
-                        <CardContent className="p-4">
-                          {/* Token Header */}
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center transition-transform duration-200 hover:scale-110">
-                                <span className="text-white font-bold text-sm">
-                                  {token.tokenSymbol.slice(0, 3).toUpperCase()}
-                                </span>
-                              </div>
-                              <div>
-                                <div className="font-semibold text-white">{token.tokenSymbol}</div>
-                                <div className="text-sm text-gray-400">{token.tokenName}</div>
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              {onTokenSelect && tokenDataItem && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onTokenSelect(tokenDataItem);
-                                  }}
-                                  className="transition-all duration-200 hover:scale-105"
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onRemoveTokenFromWatchlist(selectedWatchlist, token.tokenSymbol);
-                                }}
-                                className="transition-all duration-200 hover:scale-105"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Basic Token Info */}
-                          <div className="grid grid-cols-2 gap-3 mb-3">
-                            <div className="bg-white/5 rounded-lg p-3 transition-all duration-200 hover:bg-white/8">
-                              <p className="text-xs text-gray-400 mb-1">Price</p>
-                              <p className="text-sm font-bold text-white">
-                                {tokenDataItem ? formatNumber(tokenDataItem.price) : 'N/A'}
-                              </p>
-                            </div>
-                            <div className="bg-white/5 rounded-lg p-3 transition-all duration-200 hover:bg-white/8">
-                              <p className="text-xs text-gray-400 mb-1">24h Change</p>
-                              <div className="flex items-center space-x-1">
-                                {tokenDataItem && getPriceChangeIcon(tokenDataItem.priceChange24h)}
-                                <span className={`text-sm font-bold ${tokenDataItem ? getPriceChangeColor(tokenDataItem.priceChange24h) : 'text-gray-400'}`}>
-                                  {tokenDataItem ? formatPercentage(tokenDataItem.priceChange24h) : 'N/A'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Market Metrics */}
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-lg p-3 transition-all duration-200 hover:bg-blue-500/15">
-                              <p className="text-xs text-gray-400 mb-1">Volume</p>
-                              <p className="text-sm font-bold text-blue-400">
-                                {tokenDataItem ? formatNumber(tokenDataItem.volume24h) : 'N/A'}
-                              </p>
-                            </div>
-                            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg p-3 transition-all duration-200 hover:bg-green-500/15">
-                              <p className="text-xs text-gray-400 mb-1">Market Cap</p>
-                              <p className="text-sm font-bold text-green-400">
-                                {tokenDataItem ? formatNumber(tokenDataItem.marketCap) : 'N/A'}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Expandable Content */}
-                          {isExpanded && tokenDataItem && (
-                            <div className="mt-4 pt-4 border-t border-white/10 animate-in slide-in-from-top-2 duration-300">
-                              <div className="space-y-3">
-                                {/* Additional Metrics */}
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div className="bg-white/5 rounded-lg p-3">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                      <Clock className="h-3 w-3 text-gray-400" />
-                                      <p className="text-xs text-gray-400">Age</p>
-                                    </div>
-                                    <p className="text-sm font-medium text-white">
-                                      {formatAge(tokenDataItem.age)}
-                                    </p>
-                                  </div>
-                                  <div className="bg-white/5 rounded-lg p-3">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                      <Users className="h-3 w-3 text-gray-400" />
-                                      <p className="text-xs text-gray-400">Holders</p>
-                                    </div>
-                                    <p className="text-sm font-medium text-white">
-                                      {tokenDataItem.holders.toLocaleString()}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Price Changes */}
-                                <div className="grid grid-cols-3 gap-3">
-                                  <div className="bg-white/5 rounded-lg p-3">
-                                    <p className="text-xs text-gray-400 mb-1">1h</p>
-                                    <p className={`text-sm font-medium ${getPriceChangeColor(tokenDataItem.priceChange1h)}`}>
-                                      {formatPercentage(tokenDataItem.priceChange1h)}
-                                    </p>
-                                  </div>
-                                  <div className="bg-white/5 rounded-lg p-3">
-                                    <p className="text-xs text-gray-400 mb-1">6h</p>
-                                    <p className={`text-sm font-medium ${getPriceChangeColor(tokenDataItem.priceChange6h)}`}>
-                                      {formatPercentage(tokenDataItem.priceChange6h)}
-                                    </p>
-                                  </div>
-                                  <div className="bg-white/5 rounded-lg p-3">
-                                    <p className="text-xs text-gray-400 mb-1">24h</p>
-                                    <p className={`text-sm font-medium ${getPriceChangeColor(tokenDataItem.priceChange24h)}`}>
-                                      {formatPercentage(tokenDataItem.priceChange24h)}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Chain Info */}
-                                <div className="bg-white/5 rounded-lg p-3">
-                                  <div className="flex items-center space-x-2 mb-1">
-                                    <Activity className="h-3 w-3 text-gray-400" />
-                                    <p className="text-xs text-gray-400">Chain & DEX</p>
-                                  </div>
-                                  <p className="text-sm font-medium text-white">
-                                    {token.chainId.toUpperCase()} • {tokenDataItem.dexId.toUpperCase()}
-                                  </p>
-                                  <p className="text-xs text-gray-400 mt-1 font-mono">
-                                    {token.pairAddress.slice(0, 8)}...{token.pairAddress.slice(-6)}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Click Indicator */}
-                          {!isExpanded && (
-                            <div className={`
-                              absolute top-4 right-4 text-xs text-gray-400 opacity-0 transition-opacity duration-200
-                              ${isHovered ? 'opacity-100' : ''}
-                            `}>
-                              Click to expand
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                        </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No tokens in this watchlist yet.</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Search for tokens and add them to this watchlist.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Select a watchlist to view tokens.</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Create a new watchlist to start tracking your favorite tokens.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-
-      {/* Edit Watchlist Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Watchlist</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="Watchlist name..."
-              value={editingWatchlist?.name || ''}
-              onChange={(e) => setEditingWatchlist(prev => prev ? { ...prev, name: e.target.value } : null)}
-              onKeyPress={(e) => e.key === 'Enter' && handleUpdateWatchlist()}
-            />
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleUpdateWatchlist} disabled={loading || !editingWatchlist?.name.trim()}>
-                Update
-              </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        )}
+
+        {/* Edit Dialog */}
+        {showEditDialog && editingWatchlist && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Watchlist</h3>
+              <input
+                type="text"
+                value={editingWatchlist.name}
+                onChange={(e) => setEditingWatchlist({ ...editingWatchlist, name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+              <div className="flex justify-end space-x-3 mt-4">
+                <button
+                  onClick={() => setShowEditDialog(false)}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateWatchlist}
+                  disabled={!editingWatchlist.name.trim() || loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }; 

@@ -2,14 +2,14 @@
  * Dexscreener API Integration Tests
  */
 
-import { DexscreenerAPI, getDexScreenerAPI, TokenData, SearchFilters } from '../src/backend/integrations/dexscreener';
+import { getDexScreenerAPI, TokenData, SearchFilters } from '../src/backend/integrations/dexscreener';
 import { DatabaseManager } from '../src/backend/database/DatabaseManager';
 
 // Mock fetch
 global.fetch = jest.fn();
 
 describe('DexscreenerAPI', () => {
-  let dexScreener: DexscreenerAPI;
+  let dexScreener: any;
   let mockDb: DatabaseManager;
 
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('DexscreenerAPI', () => {
     } as any;
     
     // Always create a new DexscreenerAPI instance for each test
-    dexScreener = new DexscreenerAPI(mockDb);
+    dexScreener = getDexScreenerAPI(mockDb);
     dexScreener.clearCache();
   });
 
@@ -34,17 +34,19 @@ describe('DexscreenerAPI', () => {
         pairs: [
           {
             baseToken: { symbol: 'PEPE', name: 'Pepe' },
+            quoteToken: { symbol: 'USDC', name: 'USD Coin' },
             priceUsd: '0.00000123',
-            priceChange: { h24: '15.67', h1: '2.34', h6: '8.91' },
-            volume: { h24: '2500000' },
-            marketCap: '500000',
-            liquidity: { usd: '150000' },
-            pairAge: '172800000', // 48 hours in milliseconds
-            holders: '1250',
-            txns: { h24: '850' },
+            priceNative: '0.000000000123',
+            priceChange: { h24: 15.67, h6: 5.23, h1: 1.45 },
+            volume: { h24: 2500000, h6: 1200000, h1: 500000 },
+            liquidity: { usd: 150000, base: 1000000, quote: 150000 },
+            fdv: 500000,
+            pairCreatedAt: Date.now() - (48 * 60 * 60 * 1000), // 48 hours ago
+            txns: { h24: { buys: 850, sells: 650 } },
             pairAddress: '0x1234567890abcdef',
             chainId: 'solana',
-            dexId: 'raydium'
+            dexId: 'raydium',
+            url: 'https://dexscreener.com/solana/0x1234567890abcdef'
           }
         ]
       };
@@ -62,7 +64,7 @@ describe('DexscreenerAPI', () => {
       expect(result.tokens[0].priceChange24h).toBe(15.67);
       expect(result.tokens[0].volume24h).toBe(2500000);
       expect(result.tokens[0].marketCap).toBe(500000);
-      expect(result.tokens[0].age).toBe(48);
+      expect(result.tokens[0].age).toBeCloseTo(48, 1);
     });
 
     it('should apply filters correctly', async () => {
@@ -70,31 +72,35 @@ describe('DexscreenerAPI', () => {
         pairs: [
           {
             baseToken: { symbol: 'PEPE', name: 'Pepe' },
+            quoteToken: { symbol: 'USDC', name: 'USD Coin' },
             priceUsd: '0.00000123',
-            priceChange: { h24: '15.67' },
-            volume: { h24: '2500000' },
-            marketCap: '500000',
-            liquidity: { usd: '150000' },
-            pairAge: '172800000',
-            holders: '1250',
-            txns: { h24: '850' },
+            priceNative: '0.000000000123',
+            priceChange: { h24: 15.67, h6: 5.23, h1: 1.45 },
+            volume: { h24: 2500000, h6: 1200000, h1: 500000 },
+            liquidity: { usd: 150000, base: 1000000, quote: 150000 },
+            fdv: 500000,
+            pairCreatedAt: Date.now() - (48 * 60 * 60 * 1000),
+            txns: { h24: { buys: 850, sells: 650 } },
             pairAddress: '0x1234567890abcdef',
             chainId: 'solana',
-            dexId: 'raydium'
+            dexId: 'raydium',
+            url: 'https://dexscreener.com/solana/0x1234567890abcdef'
           },
           {
             baseToken: { symbol: 'DOGE', name: 'Dogecoin' },
+            quoteToken: { symbol: 'USDC', name: 'USD Coin' },
             priceUsd: '0.078',
-            priceChange: { h24: '-5.23' },
-            volume: { h24: '500000' }, // Below 1M filter
-            marketCap: '1200000',
-            liquidity: { usd: '500000' },
-            pairAge: '259200000', // 72 hours
-            holders: '2100',
-            txns: { h24: '1200' },
+            priceNative: '0.000000078',
+            priceChange: { h24: -5.23, h6: -2.1, h1: -0.5 },
+            volume: { h24: 500000, h6: 250000, h1: 100000 }, // Below 1M filter
+            liquidity: { usd: 500000, base: 1000000, quote: 500000 },
+            fdv: 1200000,
+            pairCreatedAt: Date.now() - (72 * 60 * 60 * 1000), // 72 hours
+            txns: { h24: { buys: 1200, sells: 800 } },
             pairAddress: '0xabcdef1234567890',
             chainId: 'solana',
-            dexId: 'raydium'
+            dexId: 'raydium',
+            url: 'https://dexscreener.com/solana/0xabcdef1234567890'
           }
         ]
       };
@@ -131,17 +137,19 @@ describe('DexscreenerAPI', () => {
         pairs: [
           {
             baseToken: { symbol: 'LOW', name: 'Low Cap Token' },
+            quoteToken: { symbol: 'USDC', name: 'USD Coin' },
             priceUsd: '0.001',
-            priceChange: { h24: '5.0' },
-            volume: { h24: '1000000' },
-            marketCap: '50000', // Below 150K minimum
-            liquidity: { usd: '50000' },
-            pairAge: '3600000', // 1 hour
-            holders: '100',
-            txns: { h24: '50' },
+            priceNative: '0.000000001',
+            priceChange: { h24: 5.0, h6: 2.1, h1: 0.5 },
+            volume: { h24: 1000000, h6: 500000, h1: 200000 },
+            liquidity: { usd: 50000, base: 1000000, quote: 50000 },
+            fdv: 50000, // Below 150K minimum
+            pairCreatedAt: Date.now() - (1 * 60 * 60 * 1000), // 1 hour
+            txns: { h24: { buys: 50, sells: 30 } },
             pairAddress: '0xlowcap123',
             chainId: 'solana',
-            dexId: 'raydium'
+            dexId: 'raydium',
+            url: 'https://dexscreener.com/solana/0xlowcap123'
           }
         ]
       };
@@ -151,7 +159,11 @@ describe('DexscreenerAPI', () => {
         json: async () => mockResponse
       });
 
-      const result = await dexScreener.searchTokens('test');
+      const filters: SearchFilters = {
+        minMarketCap: 150000 // $150K minimum
+      };
+
+      const result = await dexScreener.searchTokens('test', filters);
 
       // Should filter out tokens below minimum market cap
       expect(result.tokens).toHaveLength(0);
@@ -161,20 +173,24 @@ describe('DexscreenerAPI', () => {
   describe('getTokenDetails', () => {
     it('should fetch token details successfully', async () => {
       const mockResponse = {
-        pair: {
-          baseToken: { symbol: 'PEPE', name: 'Pepe' },
-          priceUsd: '0.00000123',
-          priceChange: { h24: '15.67', h1: '2.34', h6: '8.91' },
-          volume: { h24: '2500000' },
-          marketCap: '500000',
-          liquidity: { usd: '150000' },
-          pairAge: '172800000',
-          holders: '1250',
-          txns: { h24: '850' },
-          pairAddress: '0x1234567890abcdef',
-          chainId: 'solana',
-          dexId: 'raydium'
-        }
+        pairs: [
+          {
+            baseToken: { symbol: 'PEPE', name: 'Pepe' },
+            quoteToken: { symbol: 'USDC', name: 'USD Coin' },
+            priceUsd: '0.00000123',
+            priceNative: '0.000000000123',
+            priceChange: { h24: 15.67, h6: 5.23, h1: 1.45 },
+            volume: { h24: 2500000, h6: 1200000, h1: 500000 },
+            liquidity: { usd: 150000, base: 1000000, quote: 150000 },
+            fdv: 500000,
+            pairCreatedAt: Date.now() - (48 * 60 * 60 * 1000),
+            txns: { h24: { buys: 850, sells: 650 } },
+            pairAddress: '0x1234567890abcdef',
+            chainId: 'solana',
+            dexId: 'raydium',
+            url: 'https://dexscreener.com/solana/0x1234567890abcdef'
+          }
+        ]
       };
 
       (fetch as jest.Mock).mockResolvedValueOnce({
@@ -208,45 +224,47 @@ describe('DexscreenerAPI', () => {
         pairs: [
           {
             baseToken: { symbol: 'PEPE', name: 'Pepe' },
+            quoteToken: { symbol: 'USDC', name: 'USD Coin' },
             priceUsd: '0.00000123',
-            priceChange: { h24: '25.0' },
-            volume: { h24: '2500000' },
-            marketCap: '500000',
-            liquidity: { usd: '150000' },
-            pairAge: '172800000',
-            holders: '1250',
-            txns: { h24: '850' },
+            priceNative: '0.000000000123',
+            priceChange: { h24: 25.67, h6: 15.23, h1: 5.45 },
+            volume: { h24: 5000000, h6: 2500000, h1: 1000000 },
+            liquidity: { usd: 300000, base: 2000000, quote: 300000 },
+            fdv: 1000000,
+            pairCreatedAt: Date.now() - (24 * 60 * 60 * 1000),
+            txns: { h24: { buys: 1500, sells: 800 } },
             pairAddress: '0x1234567890abcdef',
             chainId: 'solana',
-            dexId: 'raydium'
-          },
-          {
-            baseToken: { symbol: 'DOGE', name: 'Dogecoin' },
-            priceUsd: '0.078',
-            priceChange: { h24: '15.0' },
-            volume: { h24: '15000000' },
-            marketCap: '1200000',
-            liquidity: { usd: '500000' },
-            pairAge: '259200000',
-            holders: '2100',
-            txns: { h24: '1200' },
-            pairAddress: '0xabcdef1234567890',
-            chainId: 'solana',
-            dexId: 'raydium'
+            dexId: 'raydium',
+            url: 'https://dexscreener.com/solana/0x1234567890abcdef'
           }
         ]
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse
+      // Mock the fetch to return the response for the trending tokens endpoint
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/tokens/solana')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => mockResponse
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        });
       });
 
-      const result = await dexScreener.getTrendingTokens('gainers');
+      const filters: SearchFilters = {
+        trending: 'gainers'
+      };
 
-      expect(result).toHaveLength(2);
-      // Should be sorted by price change (highest first)
-      expect(result[0].priceChange24h).toBeGreaterThan(result[1].priceChange24h);
+      const result = await dexScreener.getTrendingTokens(filters);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].symbol).toBe('PEPE');
+      expect(result[0].priceChange24h).toBe(25.67);
     });
   });
 

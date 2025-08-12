@@ -30,6 +30,187 @@ import {
   TransactionManager
 } from '../src/backend/integrations/transactions';
 
+// Mock Jupiter SDK
+jest.mock('@jup-ag/core', () => ({
+  Jupiter: {
+    load: jest.fn().mockResolvedValue({
+      quoteApi: {
+        getQuote: jest.fn().mockResolvedValue({
+          inputMint: 'So11111111111111111111111111111111111111112',
+          outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+          amount: '1000000000',
+          otherAmountThreshold: '1000000000',
+          swapMode: 'ExactIn',
+          slippageBps: 50,
+          platformFee: null,
+          priceImpactPct: '0.1',
+          routePlan: [],
+          contextSlot: 123456789,
+          timeTaken: 100,
+        }),
+        getRoutes: jest.fn().mockResolvedValue([
+          {
+            inputMint: 'So11111111111111111111111111111111111111112',
+            outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+            amount: '1000000000',
+            otherAmountThreshold: '1000000000',
+            swapMode: 'ExactIn',
+            slippageBps: 50,
+            platformFee: null,
+            priceImpactPct: '0.1',
+            routePlan: [],
+            contextSlot: 123456789,
+            timeTaken: 100,
+          }
+        ]),
+      },
+      exchangeApi: {
+        getTokens: jest.fn().mockResolvedValue([
+          {
+            address: 'So11111111111111111111111111111111111111112',
+            chainId: 101,
+            decimals: 9,
+            logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+            name: 'Wrapped SOL',
+            symbol: 'SOL',
+            tags: ['wrapped-sollet'],
+          },
+          {
+            address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+            chainId: 101,
+            decimals: 6,
+            logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
+            name: 'USD Coin',
+            symbol: 'USDC',
+            tags: ['stablecoin'],
+          }
+        ]),
+        getPrice: jest.fn().mockResolvedValue({
+          data: {
+            id: 'So11111111111111111111111111111111111111112',
+            mintSymbol: 'SOL',
+            vsToken: 'USDC',
+            vsTokenSymbol: 'USDC',
+            price: 100.50,
+          },
+          timeTaken: 50,
+        }),
+      },
+    }),
+  },
+}));
+
+// Mock Solana web3.js
+jest.mock('@solana/web3.js', () => ({
+  Connection: jest.fn().mockImplementation(() => ({
+    getLatestBlockhash: jest.fn().mockResolvedValue({
+      blockhash: 'test-blockhash',
+      lastValidBlockHeight: 123456789,
+    }),
+    getBlockHeight: jest.fn().mockResolvedValue(123456789),
+    sendTransaction: jest.fn().mockResolvedValue('test-signature'),
+    confirmTransaction: jest.fn().mockResolvedValue({
+      value: { err: null },
+      context: { slot: 123456789 },
+    }),
+    getBalance: jest.fn().mockResolvedValue(1000000000),
+    getTokenAccountsByOwner: jest.fn().mockResolvedValue({
+      value: [
+        {
+          pubkey: { toBase58: () => 'test-token-account' },
+          account: {
+            data: Buffer.from('test-data'),
+            executable: false,
+            lamports: 1000000,
+            owner: { toBase58: () => 'test-owner' },
+            rentEpoch: 0,
+          },
+        },
+      ],
+    }),
+  })),
+  PublicKey: jest.fn().mockImplementation((key) => ({
+    toBase58: () => key || 'test-public-key',
+    toString: () => key || 'test-public-key',
+  })),
+  Keypair: {
+    generate: jest.fn().mockReturnValue({
+      publicKey: { toBase58: () => 'test-public-key' },
+      secretKey: Buffer.from('test-secret-key'),
+    }),
+    fromSecretKey: jest.fn().mockReturnValue({
+      publicKey: { toBase58: () => 'test-public-key' },
+      secretKey: Buffer.from('test-secret-key'),
+    }),
+  },
+  Transaction: jest.fn().mockImplementation(() => ({
+    add: jest.fn().mockReturnThis(),
+    sign: jest.fn().mockReturnThis(),
+    serialize: jest.fn().mockReturnValue(Buffer.from('test-transaction')),
+  })),
+  VersionedTransaction: jest.fn().mockImplementation(() => ({
+    add: jest.fn().mockReturnThis(),
+    sign: jest.fn().mockReturnThis(),
+    serialize: jest.fn().mockReturnValue(Buffer.from('test-versioned-transaction')),
+  })),
+  SystemProgram: {
+    transfer: jest.fn().mockReturnValue({
+      keys: [],
+      programId: { toBase58: () => '11111111111111111111111111111111' },
+      data: Buffer.from('test-transfer-instruction'),
+    }),
+  },
+  SYSVAR_RENT_PUBKEY: { toBase58: () => 'SysvarRent111111111111111111111111111111111' },
+}));
+
+// Mock Meteora SDK
+jest.mock('@meteora-ag/sdk', () => ({
+  Meteora: {
+    load: jest.fn().mockResolvedValue({
+      poolApi: {
+        getPools: jest.fn().mockResolvedValue([
+          {
+            address: 'test-pool-address',
+            tokenA: { symbol: 'SOL', address: 'So11111111111111111111111111111111111111112' },
+            tokenB: { symbol: 'USDC', address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
+            tvl: 1000000,
+            apy: 15.5,
+            volume24h: 500000,
+          },
+        ]),
+        findPoolsByTokenPair: jest.fn().mockResolvedValue([
+          {
+            address: 'test-pool-address',
+            tokenA: { symbol: 'SOL', address: 'So11111111111111111111111111111111111111112' },
+            tokenB: { symbol: 'USDC', address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
+            tvl: 1000000,
+            apy: 15.5,
+            volume24h: 500000,
+          },
+        ]),
+      },
+      positionApi: {
+        openPosition: jest.fn().mockResolvedValue({
+          signature: 'test-position-signature',
+          positionAddress: 'test-position-address',
+        }),
+        getPositions: jest.fn().mockResolvedValue([
+          {
+            address: 'test-position-address',
+            poolAddress: 'test-pool-address',
+            tokenA: { symbol: 'SOL', amount: '1000000000' },
+            tokenB: { symbol: 'USDC', amount: '100000000' },
+            fees: { tokenA: '1000000', tokenB: '100000' },
+          },
+        ]),
+        updatePositionFees: jest.fn().mockResolvedValue({
+          signature: 'test-update-signature',
+        }),
+      },
+    }),
+  },
+}));
+
 // Mock configurations for testing
 const mockMeteoraConfig: MeteoraConfig = {
   rpcUrl: 'https://api.devnet.solana.com',
