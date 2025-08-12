@@ -28,7 +28,7 @@ router.get('/search', async (req, res, next) => {
     
     if (!query || typeof query !== 'string') {
       return res.status(400).json({
-        error: 'Query parameter is required'
+        error: 'Query parameter is required',
       });
     }
 

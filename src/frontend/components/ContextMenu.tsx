@@ -138,7 +138,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               zIndex: 1001,
             }}
           >
-            {items.map((item, index) => (
+            {items.map((item) => (
               <React.Fragment key={item.id}>
                 {item.separator ? (
                   <div className="apple-context-menu-separator" />

@@ -7,4 +7,4 @@ declare module 'vader-sentiment' {
   }
 
   export function sentiment(text: string): SentimentResult;
-} 
+}

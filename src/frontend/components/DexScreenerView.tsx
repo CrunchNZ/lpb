@@ -4,7 +4,7 @@
  * Matches TokenSearch styling and includes all requested features
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
 import { setSearchResults, setTrendingTokens, setLoading, setError } from '../store/slices/dexscreenerSlice';
 import { DatabaseManager } from '../../backend/database/DatabaseManager';
@@ -15,7 +15,7 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Search, Filter, Copy, ExternalLink, TrendingUp, TrendingDown, Clock, Users, Activity, Eye, Zap, Star } from 'lucide-react';
+import { Search, Filter, Copy, ExternalLink, TrendingUp, Clock, Activity, Eye, Zap, Star } from 'lucide-react';
 import { TokenDetailView } from './TokenDetailView';
 import { WatchlistSelector } from './WatchlistSelector';
 
@@ -34,9 +34,11 @@ interface DexScreenerViewProps {
 }
 
 export const DexScreenerView: React.FC<DexScreenerViewProps> = ({ 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   databaseManager,
   onTokenSelect,
   onAddToWatchlist,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   watchlists = []
 }) => {
   const dispatch = useAppDispatch();
