@@ -19,7 +19,6 @@ import { useAppDispatch } from '../store';
 import { openPoolDetail } from '../store/slices/uiSlice';
 import { Copy, Check, ExternalLink } from 'lucide-react';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 
 export interface PoolCardProps {
   poolName: string;

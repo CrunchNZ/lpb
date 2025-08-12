@@ -1,7 +1,7 @@
 /**
  * Jupiter Configuration
- * 
- * Configuration for Jupiter API integration using the free tier
+ *
+  * Configuration for Jupiter API integration using the free tier
  * - Uses lite-api.jup.ag (free tier, no API key required)
  * - Provides rate limiting and error handling
  * - Configures caching and timeout settings

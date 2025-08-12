@@ -154,4 +154,4 @@ router.delete('/cache', async (req, res, next) => {
 // Apply error handler
 router.use(errorHandler);
 
-export default router; 
+export default router;
