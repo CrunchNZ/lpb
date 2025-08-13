@@ -161,8 +161,8 @@ router.post('/:id/tokens', ensureDatabase, async (req, res) => {
 
     // Check if token is already in watchlist
     const existingTokens = await databaseManager.getWatchlistTokens(watchlistId);
-    const isAlreadyAdded = existingTokens.some(
-      (token) => token.tokenSymbol.toLowerCase() === tokenSymbol.toLowerCase(),
+    const isAlreadyAdded = existingTokens.some((token) =>
+      token.tokenSymbol.toLowerCase() === tokenSymbol.toLowerCase()
     );
 
     if (isAlreadyAdded) {

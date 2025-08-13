@@ -24,9 +24,24 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
     activePositions: 2 + Math.floor(Math.random() * 3),
     closedPositions: 1 + Math.floor(Math.random() * 2),
     strategyBreakdown: JSON.stringify({
-      balanced: { totalValue: 5000 + Math.random() * 1000, totalPnl: 250 + Math.random() * 100 - 50, totalApy: 25 + Math.random() * 10 - 5, positionCount: 1 },
-      aggressive: { totalValue: 3000 + Math.random() * 800, totalPnl: 200 + Math.random() * 150 - 75, totalApy: 45 + Math.random() * 15 - 7, positionCount: 1 },
-      conservative: { totalValue: 2000 + Math.random() * 600, totalPnl: -25 + Math.random() * 50 - 25, totalApy: 15 + Math.random() * 8 - 4, positionCount: 1 }
+      balanced: {
+        totalValue: 5000 + Math.random() * 1000,
+        totalPnl: 250 + Math.random() * 100 - 50,
+        totalApy: 25 + Math.random() * 10 - 5,
+        positionCount: 1,
+      },
+      aggressive: {
+        totalValue: 3000 + Math.random() * 800,
+        totalPnl: 200 + Math.random() * 150 - 75,
+        totalApy: 45 + Math.random() * 15 - 7,
+        positionCount: 1,
+      },
+      conservative: {
+        totalValue: 2000 + Math.random() * 600,
+        totalPnl: -25 + Math.random() * 50 - 25,
+        totalApy: 15 + Math.random() * 8 - 4,
+        positionCount: 1,
+      },
     })
   }));
 
@@ -104,11 +119,17 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
   // Calculate performance statistics
   const latestMetric = displayMetrics[displayMetrics.length - 1];
   const firstMetric = displayMetrics[0];
-  
-  const totalReturn = latestMetric ? ((latestMetric.totalValue - firstMetric.totalValue) / firstMetric.totalValue) * 100 : 0;
-  const averageApy = displayMetrics.reduce((sum, m) => sum + m.totalApy, 0) / displayMetrics.length;
-  const maxDrawdown = Math.min(...displayMetrics.map(m => m.totalPnl));
-  const volatility = Math.sqrt(displayMetrics.reduce((sum, m) => sum + Math.pow(m.totalApy - averageApy, 2), 0) / displayMetrics.length);
+
+  const totalReturn = latestMetric
+    ? ((latestMetric.totalValue - firstMetric.totalValue) / firstMetric.totalValue) * 100
+    : 0;
+  const averageApy =
+    displayMetrics.reduce((sum, m) => sum + m.totalApy, 0) / displayMetrics.length;
+  const maxDrawdown = Math.min(...displayMetrics.map((m) => m.totalPnl));
+  const volatility = Math.sqrt(
+    displayMetrics.reduce((sum, m) => sum + Math.pow(m.totalApy - averageApy, 2), 0) /
+      displayMetrics.length
+  );
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
@@ -121,14 +142,16 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex space-x-2">
-      {(['1d', '7d', '30d', '90d', '1y'] as const).map((range) => (
+            {(['1d', '7d', '30d', '90d', '1y'] as const).map((range) => (
               <button
                 key={range}
                 onClick={() => onTimeRangeChange(range)}
-          className={
-            `px-4 py-2 text-sm font-medium rounded-md transition-colors ` +
-            (timeRange === range ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
-          }
+                className={
+                  `px-4 py-2 text-sm font-medium rounded-md transition-colors ` +
+                  (timeRange === range
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
+                }
               >
                 {getTimeRangeLabel(range)}
               </button>
@@ -139,10 +162,12 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
               <button
                 key={metric}
                 onClick={() => setSelectedMetric(metric)}
-            className={
-              `px-3 py-1 text-xs font-medium rounded-md transition-colors ` +
-              (selectedMetric === metric ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
-            }
+                className={
+                  `px-3 py-1 text-xs font-medium rounded-md transition-colors ` +
+                  (selectedMetric === metric
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
+                }
               >
                 {getMetricLabel()}
               </button>
@@ -161,21 +186,15 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
         </div>
         <div className="bg-green-50 rounded-lg p-4">
           <h3 className="text-sm font-medium text-green-900 mb-1">Average APY</h3>
-          <p className="text-2xl font-bold text-green-600">
-            {formatPercentage(averageApy)}
-          </p>
+          <p className="text-2xl font-bold text-green-600">{formatPercentage(averageApy)}</p>
         </div>
         <div className="bg-red-50 rounded-lg p-4">
           <h3 className="text-sm font-medium text-red-900 mb-1">Max Drawdown</h3>
-          <p className="text-2xl font-bold text-red-600">
-            {formatCurrency(maxDrawdown)}
-          </p>
+          <p className="text-2xl font-bold text-red-600">{formatCurrency(maxDrawdown)}</p>
         </div>
         <div className="bg-purple-50 rounded-lg p-4">
           <h3 className="text-sm font-medium text-purple-900 mb-1">Volatility</h3>
-          <p className="text-2xl font-bold text-purple-600">
-            {volatility.toFixed(2)}%
-          </p>
+          <p className="text-2xl font-bold text-purple-600">{volatility.toFixed(2)}%</p>
         </div>
       </div>
 
@@ -183,24 +202,32 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Trend</h3>
         <div className="bg-gray-50 rounded-lg p-6 h-64 flex items-end justify-between">
-      {displayMetrics.map((metric) => {
+          {displayMetrics.map((metric) => {
             const value = getMetricValue(metric);
-            const maxValue = Math.max(...displayMetrics.map(m => getMetricValue(m)));
-            const minValue = Math.min(...displayMetrics.map(m => getMetricValue(m)));
-            const height = maxValue !== minValue ? ((value - minValue) / (maxValue - minValue)) * 100 : 50;
-            
+            const maxValue = Math.max(...displayMetrics.map((m) => getMetricValue(m)));
+            const minValue = Math.min(...displayMetrics.map((m) => getMetricValue(m)));
+            const height =
+              maxValue !== minValue ? ((value - minValue) / (maxValue - minValue)) * 100 : 50;
+
             return (
               <div key={metric.id} className="flex flex-col items-center">
                 <div
                   className={`w-4 rounded-t-sm transition-all ${
-                    selectedMetric === 'apy' ? 'bg-blue-500' : 
-                    selectedMetric === 'pnl' ? (value >= 0 ? 'bg-green-500' : 'bg-red-500') : 
-                    'bg-blue-500'
+                    selectedMetric === 'apy'
+                      ? 'bg-blue-500'
+                      : selectedMetric === 'pnl'
+                      ? value >= 0
+                        ? 'bg-green-500'
+                        : 'bg-red-500'
+                      : 'bg-blue-500'
                   }`}
                   style={{ height: `${Math.max(height, 5)}%` }}
                 />
                 <div className="text-xs text-gray-500 mt-2 transform rotate-45 origin-left">
-                  {new Date(metric.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {new Date(metric.timestamp).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
                 </div>
               </div>
             );
@@ -217,7 +244,7 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
               totalValue: 0,
               totalPnl: 0,
               totalApy: 0,
-              positionCount: 0
+              positionCount: 0,
             };
 
             return (
@@ -235,7 +262,11 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">P&L</span>
-                    <span className={`text-sm font-medium ${strategyData.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span
+                      className={`text-sm font-medium ${
+                        strategyData.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
                       {formatCurrency(strategyData.totalPnl)}
                     </span>
                   </div>
@@ -284,15 +315,17 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({
                       month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
-                      minute: '2-digit'
+                      minute: '2-digit',
                     })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {formatCurrency(metric.totalValue)}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                    metric.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                      metric.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
                     {formatCurrency(metric.totalPnl)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">

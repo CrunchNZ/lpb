@@ -1,7 +1,7 @@
 /**
  * Jupiter Configuration
  *
-  * Configuration for Jupiter API integration using the free tier
+ * Configuration for Jupiter API integration using the free tier
  * - Uses lite-api.jup.ag (free tier, no API key required)
  * - Provides rate limiting and error handling
  * - Configures caching and timeout settings
@@ -12,29 +12,29 @@ export interface JupiterConfig {
   apiUrl: string;
   quoteApiUrl: string;
   priceApiUrl: string;
-  
+
   // Connection Settings
   rpcUrl: string;
   commitment: 'processed' | 'confirmed' | 'finalized';
-  
+
   // Timeout and Retry Settings
   timeoutMs: number;
   maxRetries: number;
   retryDelayMs: number;
-  
+
   // Rate Limiting
   maxRequestsPerMinute: number;
   rateLimitWindowMs: number;
-  
+
   // Caching
   quoteCacheTtlMs: number;
   priceCacheTtlMs: number;
   tokenListCacheTtlMs: number;
-  
+
   // Slippage Settings
   defaultSlippageBps: number;
   maxSlippageBps: number;
-  
+
   // Environment
   environment: 'mainnet' | 'devnet' | 'testnet';
   enableLogging: boolean;

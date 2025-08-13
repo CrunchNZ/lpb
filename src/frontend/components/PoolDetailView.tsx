@@ -1,15 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  Percent, 
-  
-  Activity,
+import {
+  TrendingUp,
   AlertTriangle,
   Calculator,
   BarChart3,
-  
   RefreshCw,
   Download,
   Eye,
@@ -18,7 +13,7 @@ import {
   Zap,
   Shield,
   Target,
-  Clock
+  Clock,
 } from 'lucide-react';
 import { popModal, addNotification } from '../store/slices/uiSlice';
 import { Card } from './ui/card';
