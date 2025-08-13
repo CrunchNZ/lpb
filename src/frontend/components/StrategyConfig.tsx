@@ -94,6 +94,11 @@ export const StrategyConfig: React.FC<StrategyConfigProps> = ({
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => handleChange('strategy', strategy)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleChange('strategy', strategy);
+                }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-gray-900 capitalize">{strategy}</span>
@@ -124,6 +129,11 @@ export const StrategyConfig: React.FC<StrategyConfigProps> = ({
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => handleChange('riskLevel', level)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleChange('riskLevel', level);
+                }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-gray-900 capitalize">{level}</span>

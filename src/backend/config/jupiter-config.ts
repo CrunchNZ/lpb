@@ -117,7 +117,6 @@ export class JupiterRateLimiter {
   isRateLimited(endpoint: string): boolean {
     const now = Date.now();
     const windowStart = now - this.config.rateLimitWindowMs;
-    
     const requestData = this.requestCounts.get(endpoint);
     
     if (!requestData || requestData.resetTime < windowStart) {
@@ -141,7 +140,6 @@ export class JupiterRateLimiter {
     
     const now = Date.now();
     const windowStart = now - this.config.rateLimitWindowMs;
-    
     if (requestData.resetTime < windowStart) {
       return this.config.maxRequestsPerMinute;
     }

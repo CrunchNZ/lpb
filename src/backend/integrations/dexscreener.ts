@@ -285,11 +285,9 @@ class DexscreenerAPI {
 
   private buildSearchUrl(query: string, filters: SearchFilters): string {
     const params = new URLSearchParams();
-    
     if (query.trim()) {
       params.append('q', query.trim());
     }
-    
     // Ensure chainId is properly formatted for DexScreener API
     if (filters.chainId) {
       // DexScreener expects lowercase chain IDs
@@ -306,17 +304,14 @@ class DexscreenerAPI {
       if (filters.chainId) {
         const expectedChainId = filters.chainId.toLowerCase();
         const actualChainId = pair.chainId.toLowerCase();
-        
         if (actualChainId !== expectedChainId) {
           return false;
         }
       }
-      
       // Apply volume filter
       if (filters.minVolume && pair.volume.h24 < filters.minVolume) {
         return false;
       }
-      
       // Apply market cap filter
       if (filters.minMarketCap && pair.fdv < filters.minMarketCap) {
         return false;

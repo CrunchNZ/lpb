@@ -242,7 +242,8 @@ export const PositionDetailView: React.FC<PositionDetailViewProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Strategy</span>
                       <span className="font-medium text-gray-900 dark:text-white">
-                        {getStrategyIcon(position.strategy)} {position.strategy.charAt(0).toUpperCase() + position.strategy.slice(1)}
+                        {getStrategyIcon(position.strategy)}{' '}
+                        {position.strategy.charAt(0).toUpperCase() + position.strategy.slice(1)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">

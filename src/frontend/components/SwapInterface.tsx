@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowDown, ArrowUpDown, XCircle, Search, Loader2 } from 'lucide-react';
+import { ArrowUpDown, XCircle, Search, Loader2 } from 'lucide-react';
 import { dexscreenerService } from '../services/dexscreenerService';
 
 interface Token {
@@ -124,21 +124,7 @@ export const SwapInterface: React.FC = () => {
     }
   };
 
-  const formatNumber = (value: string | number, decimals: number = 6) => {
-    return parseFloat(value.toString()).toFixed(decimals);
-  };
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1e9) {
-      return `$${(amount / 1e9).toFixed(2)}B`;
-    } else if (amount >= 1e6) {
-      return `$${(amount / 1e6).toFixed(2)}M`;
-    } else if (amount >= 1e3) {
-      return `$${(amount / 1e3).toFixed(2)}K`;
-    } else {
-      return `$${amount.toFixed(2)}`;
-    }
-  };
+  // Removed unused formatNumber and formatCurrency helpers
 
   const formatPercentage = (value: number) => {
     const sign = value >= 0 ? '+' : '';
