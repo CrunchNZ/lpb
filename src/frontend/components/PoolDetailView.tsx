@@ -556,13 +556,27 @@ export const PoolDetailView: React.FC<PoolDetailViewProps> = ({
                         <option value="100">100%</option>
                       </select>
                     </div>
-                    <div id="remove-liquidity-help" className="text-sm text-gray-600 dark:text-gray-400">
-                      You will receive approximately:
-                      <div className="mt-2 space-y-1">
-                        <div>{pool.tokenASymbol}: {((parseFloat(removeLiquidityPercentage) / 100) * pool.userLiquidity / 2).toFixed(6)}</div>
-                        <div>{pool.tokenBSymbol}: {((parseFloat(removeLiquidityPercentage) / 100) * pool.userLiquidity / 2).toFixed(6)}</div>
+                      <div id="remove-liquidity-help" className="text-sm text-gray-600 dark:text-gray-400">
+                        You will receive approximately:
+                        <div className="mt-2 space-y-1">
+                          <div>
+                            {pool.tokenASymbol}:{' '}
+                            {(
+                              (parseFloat(removeLiquidityPercentage) / 100) *
+                              pool.userLiquidity /
+                              2
+                            ).toFixed(6)}
+                          </div>
+                          <div>
+                            {pool.tokenBSymbol}:{' '}
+                            {(
+                              (parseFloat(removeLiquidityPercentage) / 100) *
+                              pool.userLiquidity /
+                              2
+                            ).toFixed(6)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
                     <Button
                       variant="outline"
                       onClick={handleRemoveLiquidity}

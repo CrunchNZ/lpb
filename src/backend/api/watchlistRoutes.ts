@@ -235,4 +235,5 @@ router.get('/tokens/:tokenSymbol', ensureDatabase, async (req, res) => {
   }
 });
 
-export default router; 
+export default router;
+
