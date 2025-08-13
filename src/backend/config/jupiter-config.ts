@@ -94,7 +94,6 @@ export const JUPITER_PROD_CONFIG: JupiterConfig = {
 // Get configuration based on environment
 export function getJupiterConfig(): JupiterConfig {
   const env = process.env.NODE_ENV || 'development';
-  
   switch (env) {
     case 'production':
       return JUPITER_PROD_CONFIG;
@@ -118,7 +117,6 @@ export class JupiterRateLimiter {
     const now = Date.now();
     const windowStart = now - this.config.rateLimitWindowMs;
     const requestData = this.requestCounts.get(endpoint);
-    
     if (!requestData || requestData.resetTime < windowStart) {
       this.requestCounts.set(endpoint, { count: 1, resetTime: now });
       return false;
@@ -143,7 +141,7 @@ export class JupiterRateLimiter {
     if (requestData.resetTime < windowStart) {
       return this.config.maxRequestsPerMinute;
     }
-    
+
     return Math.max(0, this.config.maxRequestsPerMinute - requestData.count);
   }
 

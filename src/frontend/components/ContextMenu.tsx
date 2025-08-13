@@ -30,7 +30,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
-  const { scaleIn, scaleOut } = useAnimation();
+  const { scaleIn } = useAnimation();
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();

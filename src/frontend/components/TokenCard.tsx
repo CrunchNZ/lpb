@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useAppDispatch } from '../store';
 import { openTokenDetail } from '../store/slices/uiSlice';
-import { Token } from '../../backend/strategies/types';
-import { TokenData } from '../store/slices/dexscreenerSlice';
+// Removed unused Token and TokenData imports
 
 // Combined token interface that includes both Token and TokenData fields
 interface TokenCardData {
@@ -87,9 +86,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({
     return '💥';
   };
 
-  const getTrendingIcon = (trending: boolean) => {
-    return trending ? '🔥' : '📊';
-  };
+  // Removed unused getTrendingIcon helper
 
   const formatAge = (ageInDays: number) => {
     if (ageInDays < 1) return '< 1 day';
@@ -149,6 +146,11 @@ export const TokenCard: React.FC<TokenCardProps> = ({
       onMouseUp={handleMouseUp}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') handleClick();
+      }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">

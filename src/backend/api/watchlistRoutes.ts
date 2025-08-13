@@ -141,7 +141,6 @@ router.post('/:id/tokens', ensureDatabase, async (req, res) => {
   try {
     const watchlistId = parseInt(req.params.id);
     const { tokenSymbol, tokenName, pairAddress, chainId = 'solana' } = req.body;
-    
     if (isNaN(watchlistId)) {
       return res.status(400).json({ error: 'Invalid watchlist ID' });
     }

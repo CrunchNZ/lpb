@@ -316,14 +316,14 @@ class DexscreenerAPI {
       if (filters.minMarketCap && pair.fdv < filters.minMarketCap) {
         return false;
       }
-      
+
       return true;
     });
 
     const tokens = filteredPairs
       .map(pair => this.convertPairToTokenData(pair))
       .filter(Boolean) as TokenData[];
-    
+
     return tokens;
   }
 
@@ -380,13 +380,13 @@ class DexscreenerAPI {
   private async rateLimit(): Promise<void> {
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
-    
+
     if (timeSinceLastRequest < this.rateLimitDelay) {
-      await new Promise(resolve => 
+      await new Promise(resolve =>
         setTimeout(resolve, this.rateLimitDelay - timeSinceLastRequest)
       );
     }
-    
+
     this.lastRequestTime = Date.now();
   }
 
