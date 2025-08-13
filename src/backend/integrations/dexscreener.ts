@@ -237,8 +237,8 @@ class DexscreenerAPI {
     try {
       // Search for the specific token
       const searchResult = await this.searchTokens(symbol, {});
-      const token = searchResult.tokens.find(t => 
-        t.symbol.toLowerCase() === symbol.toLowerCase()
+      const token = searchResult.tokens.find(
+        (t) => t.symbol.toLowerCase() === symbol.toLowerCase()
       );
 
       if (token) {

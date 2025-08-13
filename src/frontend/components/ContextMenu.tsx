@@ -98,13 +98,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     }
   }, [isOpen, scaleIn]);
 
-  const handleClose = async () => {
-    if (menuRef.current) {
-      await scaleOut(menuRef.current);
-      setIsOpen(false);
-    }
-    return;
-  };
+  // Removed unused handleClose to satisfy linter
 
   return (
     <div className={`apple-context-menu ${className}`}>

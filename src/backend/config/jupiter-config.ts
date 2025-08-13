@@ -206,4 +206,4 @@ export class JupiterCache {
 // Default configuration instance
 export const jupiterConfig = getJupiterConfig();
 export const jupiterRateLimiter = new JupiterRateLimiter(jupiterConfig);
-export const jupiterCache = new JupiterCache(jupiterConfig); 
+export const jupiterCache = new JupiterCache(jupiterConfig);

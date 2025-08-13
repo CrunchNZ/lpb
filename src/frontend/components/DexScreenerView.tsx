@@ -76,7 +76,7 @@ export const DexScreenerView: React.FC<DexScreenerViewProps> = ({
         dispatch(setLoading(false));
       }
     }, 500),
-    [dispatch]
+    [dispatch, setSearchResults, setLoading, setError]
   );
 
   useEffect(() => {

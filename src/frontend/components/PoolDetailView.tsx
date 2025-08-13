@@ -3,17 +3,11 @@ import { useDispatch } from 'react-redux';
 import {
   TrendingUp,
   AlertTriangle,
-  Calculator,
   BarChart3,
   RefreshCw,
-  Download,
   Eye,
   Plus,
-  Minus,
   Zap,
-  Shield,
-  Target,
-  Clock,
 } from 'lucide-react';
 import { popModal, addNotification } from '../store/slices/uiSlice';
 import { Card } from './ui/card';
@@ -742,8 +736,8 @@ export const PoolDetailView: React.FC<PoolDetailViewProps> = ({
               <Card className="p-4">
                 <h4 className="font-semibold mb-3 text-gray-900 dark:text-white">Available Rewards</h4>
                 <div className="space-y-3">
-                  {pool.rewards.map((reward, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  {pool.rewards.map((reward) => (
+                    <div key={`${reward.token}-${reward.amount}-${reward.value}`} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
                           <span className="text-white font-bold text-xs">
