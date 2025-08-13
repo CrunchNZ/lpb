@@ -117,7 +117,6 @@ router.put('/:id', ensureDatabase, async (req, res) => {
 router.delete('/:id', ensureDatabase, async (req, res) => {
   try {
     const watchlistId = parseInt(req.params.id);
-    
     if (isNaN(watchlistId)) {
       return res.status(400).json({ error: 'Invalid watchlist ID' });
     }
@@ -192,7 +191,6 @@ router.delete('/:id/tokens/:tokenSymbol', ensureDatabase, async (req, res) => {
   try {
     const watchlistId = parseInt(req.params.id);
     const { tokenSymbol } = req.params;
-    
     if (isNaN(watchlistId)) {
       return res.status(400).json({ error: 'Invalid watchlist ID' });
     }
@@ -220,7 +218,6 @@ router.delete('/:id/tokens/:tokenSymbol', ensureDatabase, async (req, res) => {
 router.get('/tokens/:tokenSymbol', ensureDatabase, async (req, res) => {
   try {
     const { tokenSymbol } = req.params;
-    
     if (!tokenSymbol) {
       return res.status(400).json({ error: 'Token symbol is required' });
     }

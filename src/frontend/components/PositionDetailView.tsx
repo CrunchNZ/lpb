@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Position } from '../../backend/database';
 import { popModal, addNotification } from '../store/slices/uiSlice';

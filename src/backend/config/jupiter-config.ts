@@ -46,29 +46,29 @@ export const JUPITER_FREE_TIER_CONFIG: JupiterConfig = {
   apiUrl: 'https://lite-api.jup.ag',
   quoteApiUrl: 'https://lite-api.jup.ag/v6/quote',
   priceApiUrl: 'https://lite-api.jup.ag/v4/price',
-  
+
   // Connection settings
   rpcUrl: process.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
   commitment: 'confirmed',
-  
+
   // Timeout and retry settings
   timeoutMs: 30000,
   maxRetries: 3,
   retryDelayMs: 1000,
-  
+
   // Rate limiting (free tier limits)
   maxRequestsPerMinute: 60,
   rateLimitWindowMs: 60000,
-  
+
   // Caching settings
   quoteCacheTtlMs: 30000, // 30 seconds
   priceCacheTtlMs: 10000, // 10 seconds
   tokenListCacheTtlMs: 300000, // 5 minutes
-  
+
   // Slippage settings
   defaultSlippageBps: 50, // 0.5%
   maxSlippageBps: 1000, // 10%
-  
+
   // Environment
   environment: 'mainnet',
   enableLogging: process.env.NODE_ENV === 'development',
